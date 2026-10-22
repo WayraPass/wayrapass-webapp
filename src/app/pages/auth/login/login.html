@@ -1,0 +1,81 @@
+<div class="auth-page">
+  <aside class="auth-brand-panel">
+    <a class="brand-lockup" routerLink="/" aria-label="WayraPass, inicio">
+      <span class="brand-mark"><mat-icon>alt_route</mat-icon></span>
+      <span class="brand-name">WayraPass</span>
+    </a>
+
+    <div class="brand-copy">
+      <p class="eyebrow">MOVILIDAD ESTUDIANTIL</p>
+      <h1>Tu ruta, más clara.<br /><span>Tu viaje, más seguro.</span></h1>
+      <p class="brand-description">Organiza y consulta la información de tus traslados desde un solo lugar.</p>
+
+      <div class="feature-list">
+        <div class="feature-item"><mat-icon>route</mat-icon><span>Rutas y horarios organizados</span></div>
+        <div class="feature-item"><mat-icon>notifications_active</mat-icon><span>Información sobre el servicio</span></div>
+        <div class="feature-item"><mat-icon>groups</mat-icon><span>Información según tu perfil</span></div>
+      </div>
+    </div>
+
+    <p class="brand-footnote">Una plataforma para estudiantes, familiares, choferes y coordinadores.</p>
+  </aside>
+
+  <main class="auth-form-panel">
+    <section class="auth-form-wrap" aria-labelledby="login-title">
+      <div class="mobile-brand"><span class="brand-mark"><mat-icon>alt_route</mat-icon></span><span class="brand-name">WayraPass</span></div>
+      <div class="form-heading">
+        <p class="eyebrow">BIENVENIDO DE NUEVO</p>
+        <h2 id="login-title">Iniciar sesión</h2>
+        <p>Ingresa con tu correo y contraseña para continuar.</p>
+      </div>
+
+      @if (successMessage()) {
+        <div class="form-alert success" role="status">{{ successMessage() }}</div>
+      }
+      @if (errorMessage()) {
+        <div class="form-alert error" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Correo electrónico</mat-label>
+          <mat-icon matPrefix>mail_outline</mat-icon>
+          <input matInput type="email" formControlName="email" autocomplete="email" placeholder="nombre@correo.com" />
+          @if (form.controls.email.hasError('required') && form.controls.email.touched) {
+            <mat-error>El correo electrónico es obligatorio.</mat-error>
+          } @else if (form.controls.email.hasError('email') && form.controls.email.touched) {
+            <mat-error>Ingresa un correo válido.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contraseña</mat-label>
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <input matInput [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" />
+          <button mat-icon-button matSuffix type="button" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+            <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (form.controls.password.hasError('required') && form.controls.password.touched) {
+            <mat-error>La contraseña es obligatoria.</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="form-options"><a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a></div>
+
+        <button mat-flat-button color="primary" class="submit-button" type="submit" [disabled]="loading()">
+          @if (loading()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            <span>Ingresar a WayraPass</span>
+            <mat-icon>arrow_forward</mat-icon>
+          }
+        </button>
+      </form>
+
+      <div class="auth-divider"><span>¿Aún no tienes cuenta?</span></div>
+      <a mat-stroked-button class="secondary-button" routerLink="/register">Crear cuenta</a>
+      <p class="account-note">¿Eres chofer o coordinador? Tu cuenta debe ser habilitada por la administración.</p>
+      <p class="legal-note">Al continuar, utiliza únicamente una cuenta que te haya sido asignada o registrada en WayraPass.</p>
+    </section>
+  </main>
+</div>
