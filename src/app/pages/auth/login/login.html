@@ -66,8 +66,10 @@
           @if (loading()) {
             <mat-spinner diameter="20" />
           } @else {
-            <span>Ingresar a WayraPass</span>
-            <mat-icon>arrow_forward</mat-icon>
+            <ng-container>
+              <span>Ingresar a WayraPass</span>
+              <mat-icon>arrow_forward</mat-icon>
+            </ng-container>
           }
         </button>
       </form>
