@@ -1,93 +1,59 @@
-<div class="auth-page register-page">
+<div class="auth-page compact-auth-page">
   <aside class="auth-brand-panel">
-    <a class="brand-lockup" routerLink="/" aria-label="WayraPass, inicio">
-      <span class="brand-mark"><mat-icon>alt_route</mat-icon></span><span class="brand-name">WayraPass</span>
-    </a>
+    <a class="wordmark" routerLink="/login"><span>WAYRA</span><strong>PASS</strong></a>
     <div class="brand-copy">
-      <p class="eyebrow">ÚNETE A WAYRAPASS</p>
-      <h1>Empieza a organizar<br /><span>tu experiencia de viaje.</span></h1>
-      <p class="brand-description">Crea una cuenta según tu relación con el servicio de transporte estudiantil.</p>
-      <div class="role-card"><mat-icon>school</mat-icon><div><strong>Estudiante</strong><p>Consulta rutas, horarios y datos del viaje.</p></div></div>
-      <div class="role-card"><mat-icon>family_restroom</mat-icon><div><strong>Familiar autorizado</strong><p>Accede a la información del estudiante vinculado.</p></div></div>
+      <h1>Crea tu cuenta</h1>
+      <p>El registro público está disponible únicamente para estudiantes y familiares autorizados.</p>
+      <div class="profile-list compact-list">
+        <div class="profile-card static"><span class="profile-dot"></span><span><strong>Estudiante</strong><small>Acceso personal a la experiencia de transporte.</small></span></div>
+        <div class="profile-card static"><span class="profile-dot"></span><span><strong>Familiar autorizado</strong><small>Acceso vinculado a un estudiante.</small></span></div>
+      </div>
     </div>
-    <p class="brand-footnote">Las cuentas de chofer y coordinador son habilitadas por la administración.</p>
+    <p class="security-note"><span></span> Choferes y coordinadores reciben una cuenta de administración</p>
   </aside>
 
   <main class="auth-form-panel">
-    <section class="auth-form-wrap register-form-wrap" aria-labelledby="register-title">
-      <div class="mobile-brand"><span class="brand-mark"><mat-icon>alt_route</mat-icon></span><span class="brand-name">WayraPass</span></div>
-      <div class="form-heading">
-        <p class="eyebrow">REGISTRO DE USUARIO</p>
-        <h2 id="register-title">Crear una cuenta</h2>
-        <p>Completa tus datos para solicitar acceso a WayraPass.</p>
-      </div>
+    <section class="auth-card register-card" aria-labelledby="register-title">
+      <div class="mobile-wordmark"><span>WAYRA</span><strong>PASS</strong></div>
+      <header class="form-heading"><h2 id="register-title">Crear cuenta</h2><p>Completa tus datos para usar la simulación de WayraPass.</p></header>
+
+      <fieldset class="role-selector public-role-selector">
+        <legend>Tipo de cuenta</legend>
+        <div class="role-grid two-columns">
+          <button type="button" class="role-option" [class.active]="selectedRole() === 'STUDENT'" (click)="selectRole('STUDENT')"><strong>Estudiante</strong><span>Registro público</span></button>
+          <button type="button" class="role-option" [class.active]="selectedRole() === 'FAMILY'" (click)="selectRole('FAMILY')"><strong>Familiar</strong><span>Autorizado</span></button>
+        </div>
+      </fieldset>
 
       @if (errorMessage()) { <div class="form-alert error" role="alert">{{ errorMessage() }}</div> }
-      @if (successMessage()) { <div class="form-alert success" role="status">{{ successMessage() }}</div> }
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <div class="field-grid">
-          <mat-form-field appearance="outline">
-            <mat-label>Nombres</mat-label>
-            <input matInput formControlName="firstName" autocomplete="given-name" />
-            @if (form.controls.firstName.hasError('required') && form.controls.firstName.touched) { <mat-error>Ingresa tus nombres.</mat-error> }
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Apellidos</mat-label>
-            <input matInput formControlName="lastName" autocomplete="family-name" />
-            @if (form.controls.lastName.hasError('required') && form.controls.lastName.touched) { <mat-error>Ingresa tus apellidos.</mat-error> }
-          </mat-form-field>
+          <div><label class="field-label" for="first-name">Nombres</label><div class="input-shell"><input id="first-name" formControlName="firstName" autocomplete="given-name" /></div>
+            @if (form.controls.firstName.invalid && form.controls.firstName.touched) { <p class="field-error">Ingresa al menos 2 caracteres.</p> }</div>
+          <div><label class="field-label" for="last-name">Apellidos</label><div class="input-shell"><input id="last-name" formControlName="lastName" autocomplete="family-name" /></div>
+            @if (form.controls.lastName.invalid && form.controls.lastName.touched) { <p class="field-error">Ingresa al menos 2 caracteres.</p> }</div>
         </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Correo electrónico</mat-label><mat-icon matPrefix>mail_outline</mat-icon>
-          <input matInput type="email" formControlName="email" autocomplete="email" placeholder="nombre@correo.com" />
-          @if (form.controls.email.hasError('required') && form.controls.email.touched) { <mat-error>El correo es obligatorio.</mat-error> }
-          @else if (form.controls.email.hasError('email') && form.controls.email.touched) { <mat-error>Ingresa un correo válido.</mat-error> }
-        </mat-form-field>
+        <label class="field-label" for="register-email">Correo</label>
+        <div class="input-shell"><input id="register-email" type="email" formControlName="email" autocomplete="email" placeholder="correo@ejemplo.com" /></div>
+        @if (form.controls.email.hasError('required') && form.controls.email.touched) { <p class="field-error">El correo es obligatorio.</p> }
+        @else if (form.controls.email.hasError('email') && form.controls.email.touched) { <p class="field-error">Ingresa un correo válido.</p> }
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Tipo de cuenta</mat-label><mat-icon matPrefix>badge</mat-icon>
-          <mat-select formControlName="role">
-            <mat-option value="STUDENT">Estudiante</mat-option>
-            <mat-option value="FAMILY">Familiar autorizado</mat-option>
-          </mat-select>
-          <mat-hint>Choferes y coordinadores ingresan con cuentas habilitadas por la administración.</mat-hint>
-        </mat-form-field>
+        <label class="field-label" for="register-password">Contraseña</label>
+        <div class="input-shell password-shell"><input id="register-password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="new-password" /><button type="button" (click)="showPassword.set(!showPassword())">{{ showPassword() ? 'Ocultar' : 'Mostrar' }}</button></div>
+        @if (form.controls.password.hasError('required') && form.controls.password.touched) { <p class="field-error">La contraseña es obligatoria.</p> }
+        @else if (form.controls.password.hasError('minlength') && form.controls.password.touched) { <p class="field-error">Debe tener al menos 8 caracteres.</p> }
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Contraseña</mat-label><mat-icon matPrefix>lock_outline</mat-icon>
-          <input matInput [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="new-password" />
-          <button mat-icon-button matSuffix type="button" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"><mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon></button>
-          @if (form.controls.password.hasError('required') && form.controls.password.touched) { <mat-error>La contraseña es obligatoria.</mat-error> }
-          @else if (form.controls.password.hasError('minlength') && form.controls.password.touched) { <mat-error>Debe tener al menos 8 caracteres.</mat-error> }
-        </mat-form-field>
-        @if (form.controls.password.value) {
-          <div class="password-strength"><span>Seguridad de la contraseña</span><strong>{{ passwordStrength() }}</strong></div>
-        }
+        <label class="field-label" for="confirm-password">Confirmar contraseña</label>
+        <div class="input-shell password-shell"><input id="confirm-password" [type]="showConfirmPassword() ? 'text' : 'password'" formControlName="confirmPassword" autocomplete="new-password" /><button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())">{{ showConfirmPassword() ? 'Ocultar' : 'Mostrar' }}</button></div>
+        @if (form.controls.confirmPassword.hasError('required') && form.controls.confirmPassword.touched) { <p class="field-error">Confirma tu contraseña.</p> }
+        @else if (form.hasError('passwordMismatch') && form.controls.confirmPassword.touched) { <p class="field-error">Las contraseñas no coinciden.</p> }
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Confirmar contraseña</mat-label><mat-icon matPrefix>lock_reset</mat-icon>
-          <input matInput [type]="showConfirmPassword() ? 'text' : 'password'" formControlName="confirmPassword" autocomplete="new-password" />
-          <button mat-icon-button matSuffix type="button" (click)="showConfirmPassword.set(!showConfirmPassword())" [attr.aria-label]="showConfirmPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"><mat-icon>{{ showConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon></button>
-          @if (form.controls.confirmPassword.hasError('required') && form.controls.confirmPassword.touched) { <mat-error>Confirma tu contraseña.</mat-error> }
-          @else if (form.hasError('passwordMismatch') && form.controls.confirmPassword.touched) { <mat-error>Las contraseñas no coinciden.</mat-error> }
-        </mat-form-field>
-
-        <button mat-flat-button color="primary" class="submit-button" type="submit" [disabled]="loading()">
-          @if (loading()) {
-            <mat-spinner diameter="20" />
-          } @else {
-            <ng-container>
-              <span>Crear cuenta</span>
-              <mat-icon>arrow_forward</mat-icon>
-            </ng-container>
-          }
-        </button>
+        <p class="role-notice registration-notice"><strong>Sin registro público:</strong> las cuentas de chofer y coordinador deben ser habilitadas por administración.</p>
+        <button mat-flat-button class="primary-button" type="submit" [disabled]="loading()">@if (loading()) { <mat-spinner diameter="20" /> } @else { Crear cuenta de {{ selectedRole() === 'STUDENT' ? 'Estudiante' : 'Familiar' }} }</button>
       </form>
-
-      <p class="auth-switch">¿Ya tienes una cuenta? <a routerLink="/login">Inicia sesión</a></p>
-      <p class="legal-note">No compartas tu contraseña. La administración determina qué cuentas de operación se habilitan.</p>
+      <p class="auth-switch">¿Ya tienes una cuenta? <a routerLink="/login">Iniciar sesión</a></p>
     </section>
   </main>
 </div>
