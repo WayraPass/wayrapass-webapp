@@ -1,0 +1,16 @@
+<div class="dashboard-page">
+  <header class="dashboard-header">
+    <a class="dashboard-wordmark" href="/" aria-label="WayraPass"><span>WAYRA</span><strong>PASS</strong></a>
+    <div class="user-actions"><span class="role-chip">{{ roleName() }}</span><button mat-stroked-button type="button" (click)="logout()"><mat-icon>logout</mat-icon>Cerrar sesión</button></div>
+  </header>
+  <main class="dashboard-main">
+    <section class="welcome-card">
+      <div class="role-icon"><mat-icon>{{ icon() }}</mat-icon></div>
+      <p class="dashboard-eyebrow">{{ eyebrow() }}</p>
+      <h1>Hola, {{ user()?.fullName }}</h1>
+      <p>{{ description() }}</p>
+      <div class="account-summary"><div><span>Correo</span><strong>{{ user()?.email }}</strong></div><div><span>Rol verificado</span><strong>{{ roleName() }}</strong></div></div>
+    </section>
+    <section class="scope-card"><mat-icon>construction</mat-icon><div><h2>Dashboard de demostración</h2><p>Esta pantalla confirma que el inicio de sesión identificó el rol y aplicó la ruta correcta. Las funciones operativas se desarrollarán en otras User Stories.</p></div></section>
+  </main>
+</div>

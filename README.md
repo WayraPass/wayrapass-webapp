@@ -2,6 +2,19 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.24.
 
+## US01 frontend mock
+
+La autenticación de esta etapa funciona completamente en Angular y no requiere backend, PostgreSQL ni endpoints `/api/**`.
+
+| Rol | Correo demo | Contraseña |
+| --- | --- | --- |
+| Estudiante | `student@wayrapass.com` | `WayraPass2026!` |
+| Familiar | `family@wayrapass.com` | `WayraPass2026!` |
+| Chofer | `driver@wayrapass.com` | `WayraPass2026!` |
+| Coordinador | `coordinator@wayrapass.com` | `WayraPass2026!` |
+
+Los registros y cambios de contraseña se guardan localmente en el navegador. El registro público solo admite cuentas de estudiante y familiar; las cuentas de chofer y coordinador son previamente habilitadas.
+
 ## Development server
 
 To start a local development server, run:
