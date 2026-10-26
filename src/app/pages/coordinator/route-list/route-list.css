@@ -1,0 +1,5 @@
+:host { display: block; min-width: 0; }
+.wp-table { min-width: 900px; }
+.date { color: var(--ink-500); font-variant-numeric: tabular-nums; }
+.close { width: 32px; height: 32px; color: inherit; }
+.spinner { margin: 0 auto; }
