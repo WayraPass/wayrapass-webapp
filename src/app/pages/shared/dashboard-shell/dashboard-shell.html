@@ -1,6 +1,9 @@
 <div class="dashboard-page">
   <header class="dashboard-header">
-    <a class="dashboard-wordmark" href="/" aria-label="WayraPass"><span>WAYRA</span><strong>PASS</strong></a>
+    <a class="brand dashboard-brand" href="/" aria-label="WayraPass">
+      <span class="brand-mark" aria-hidden="true">W</span>
+      <span class="brand-word">WAYRA<span>PASS</span></span>
+    </a>
     <div class="user-actions"><span class="role-chip">{{ roleName() }}</span><button mat-stroked-button type="button" (click)="logout()"><mat-icon>logout</mat-icon>Cerrar sesión</button></div>
   </header>
   <main class="dashboard-main">

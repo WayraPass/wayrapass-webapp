@@ -15,6 +15,80 @@ body { min-height: 100vh; color: var(--wp-navy); background: var(--wp-paper); fo
 * { box-sizing: border-box; }
 button, input { font: inherit; }
 
+.brand,
+.wordmark,
+.mobile-wordmark,
+.dashboard-wordmark {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.brand-mark,
+.wordmark > span:first-child,
+.mobile-wordmark > span:first-child,
+.dashboard-wordmark > span:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  margin: 0;
+  border-radius: 11px;
+  background: #142344;
+  color: #efb640;
+  font-size: 17px;
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1;
+  text-align: center;
+}
+
+.brand-word,
+.wordmark > span:last-child,
+.mobile-wordmark > span:last-child,
+.dashboard-wordmark > span:last-child {
+  color: #142344;
+  font-size: 21px;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+}
+
+.brand-word span,
+.wordmark > span:last-child strong,
+.mobile-wordmark > span:last-child strong,
+.dashboard-wordmark > span:last-child strong {
+  color: #efb640;
+}
+
+.auth-brand-panel .brand-word,
+.auth-brand-panel .wordmark > span:last-child,
+.auth-brand-panel .mobile-wordmark > span:last-child {
+  color: #fff;
+}
+
+.auth-brand-panel .brand-word span,
+.auth-brand-panel .wordmark > span:last-child strong,
+.auth-brand-panel .mobile-wordmark > span:last-child strong {
+  color: #efb640;
+}
+
+.dashboard-header .brand-word,
+.dashboard-header .dashboard-wordmark > span:last-child {
+  color: #142344;
+}
+
+.dashboard-header .brand-word span,
+.dashboard-header .dashboard-wordmark > span:last-child strong {
+  color: #efb640;
+}
+
 .auth-page { min-height: 100vh; display: grid; grid-template-columns: minmax(460px, 1fr) minmax(570px, 1.12fr); }
 .auth-brand-panel { min-height: 100vh; display: flex; flex-direction: column; padding: clamp(34px, 4.6vw, 72px); color: #fff; background: linear-gradient(145deg, #0a2344, #14254a 68%, #10213f); }
 .wordmark, .mobile-wordmark { display: inline-flex; width: fit-content; color: #fff; text-decoration: none; font-family: 'Manrope', Arial, sans-serif; font-size: clamp(24px, 2.2vw, 34px); font-style: italic; font-weight: 800; letter-spacing: -1.2px; }
