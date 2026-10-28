@@ -150,10 +150,10 @@ export class AuthService {
 
   dashboardPath(role: UserRole): string {
     const paths: Record<UserRole, string> = {
-      STUDENT: '/historial-rutas',
-      FAMILY: '/historial-rutas',
-      DRIVER: '/historial-rutas',
-      COORDINATOR: '/historial-rutas',
+      STUDENT: '/coordinator/routes',
+      FAMILY: '/coordinator/routes',
+      DRIVER: '/coordinator/routes',
+      COORDINATOR: '/coordinator/routes',
     };
     return paths[role];
   }

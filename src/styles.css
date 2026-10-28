@@ -33,8 +33,9 @@ button, input { font: inherit; }
 .wordmark > span:first-child,
 .mobile-wordmark > span:first-child,
 .dashboard-wordmark > span:first-child {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 35px;
   height: 35px;
   padding: 0;

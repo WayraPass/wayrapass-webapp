@@ -1,0 +1,247 @@
+<header class="wp-page-header no-tabs">
+  <nav class="wp-breadcrumb" aria-label="Ruta de navegación">
+    <a routerLink="/coordinator/routes">Rutas y paraderos</a>
+    <mat-icon aria-hidden="true">chevron_right</mat-icon>
+    <span aria-current="page">{{ editingId() ? 'Editar ruta' : 'Nueva ruta' }}</span>
+  </nav>
+  <div class="wp-page-header__row">
+    <div>
+      <h1>{{ title() }}</h1>
+      <p>Registra el recorrido, sus paraderos y horarios. Los campos con * son obligatorios.</p>
+    </div>
+    <div class="wp-page-header__actions">
+      <a class="wp-btn wp-btn--secondary" routerLink="/coordinator/routes">Cancelar</a>
+      <button type="submit" form="route-form" class="wp-btn wp-btn--primary" [disabled]="saving() || loading()">
+        @if (saving()) { <mat-spinner diameter="20" /> } @else { <mat-icon aria-hidden="true">check</mat-icon> }
+        Guardar ruta
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="wp-page-body">
+  @if ((submitted() && pendingFields().length) || serverError()) {
+    <div #errorBox class="wp-alert wp-alert--error" role="alert" tabindex="-1">
+      <mat-icon aria-hidden="true">error</mat-icon>
+      <div class="wp-alert__body">
+        @if (serverError()) {
+          <strong>{{ serverError() }}</strong>
+        } @else {
+          <strong>No se guardó la ruta. Completa {{ pendingFields().length === 1 ? 'el campo pendiente' : 'los ' + pendingFields().length + ' campos pendientes' }}:</strong>
+          <span class="pending-links">
+            @for (field of pendingFields(); track field.anchor) {
+              <a [href]="'#' + field.anchor" (click)="$event.preventDefault(); scrollTo(field.anchor)">{{ field.label }}</a>
+            }
+          </span>
+        }
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="wp-card" style="align-items: center"><mat-spinner diameter="32" /></div>
+  } @else if (editingId() && !original()) {
+    <div class="wp-card" style="align-items: flex-start">
+      <p style="margin: 0">No encontramos esta ruta. Puede que el enlace sea antiguo.</p>
+      <a class="wp-btn wp-btn--secondary" routerLink="/coordinator/routes">Volver a rutas</a>
+    </div>
+  } @else {
+    <div class="layout">
+      <form id="route-form" class="form-column" [formGroup]="form" (ngSubmit)="save()" novalidate>
+
+        <section class="wp-card" aria-labelledby="sec-data">
+          <div class="wp-card__head"><h2 id="sec-data">Datos de la ruta</h2></div>
+          <div class="grid-3">
+            <div class="wp-field">
+              <label for="route-code">Código *</label>
+              <input id="route-code" class="wp-input" formControlName="code" placeholder="R-16" autocomplete="off"
+                     [class.invalid]="showError(form.controls.code)" />
+              @if (showError(form.controls.code)) {
+                <p class="wp-field-error">{{ form.controls.code.hasError('required') ? 'Ingresa el código.' : 'Usa el formato R-16.' }}</p>
+              }
+            </div>
+            <div class="wp-field span-2">
+              <label for="route-name">Nombre de la ruta *</label>
+              <input id="route-name" class="wp-input" formControlName="name" placeholder="Ate – Campus San Isidro"
+                     [class.invalid]="showError(form.controls.name)" />
+              @if (showError(form.controls.name)) { <p class="wp-field-error">Ingresa un nombre para la ruta.</p> }
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="wp-field">
+              <label for="route-origin">Origen (distrito) *</label>
+              <select id="route-origin" class="wp-input" formControlName="origin" [class.invalid]="showError(form.controls.origin)">
+                <option value="" disabled>Selecciona un distrito</option>
+                @for (district of districts; track district) { <option [value]="district">{{ district }}</option> }
+              </select>
+              @if (showError(form.controls.origin)) { <p class="wp-field-error">Elige el distrito donde inicia la ruta.</p> }
+            </div>
+            <div class="wp-field">
+              <label for="route-destination">Destino (institución y campus) *</label>
+              <select id="route-destination" class="wp-input" formControlName="destination" [class.invalid]="showError(form.controls.destination)">
+                <option value="" disabled>Selecciona una institución</option>
+                @for (institution of institutions; track institution) { <option [value]="institution">{{ institution }}</option> }
+              </select>
+              @if (showError(form.controls.destination)) { <p class="wp-field-error">Elige la institución a la que llega la ruta.</p> }
+            </div>
+          </div>
+          <fieldset class="status-options">
+            <legend class="wp-label">Estado</legend>
+            <label class="option" [class.selected]="form.controls.status.value === 'ACTIVE'">
+              <input type="radio" formControlName="status" value="ACTIVE" />
+              <span><strong>Activa</strong><small>Disponible para planificación y búsqueda</small></span>
+            </label>
+            <label class="option" [class.selected]="form.controls.status.value === 'INACTIVE'">
+              <input type="radio" formControlName="status" value="INACTIVE" />
+              <span><strong>Inactiva</strong><small>Se guarda, pero no se puede asignar</small></span>
+            </label>
+          </fieldset>
+        </section>
+
+        <section id="route-stops" class="wp-card" [class.invalid]="showError(stops)" aria-labelledby="sec-stops">
+          <div class="wp-card__head">
+            <div>
+              <h2 id="sec-stops">Paraderos * <span class="count">· {{ stops.length }}</span></h2>
+              <p>En el orden del recorrido. Solo se pueden agregar paraderos activos.</p>
+            </div>
+          </div>
+
+          @if (stops.length) {
+            <ol class="stop-list" formArrayName="stops">
+              @for (group of stops.controls; track group; let i = $index; let first = $first; let last = $last) {
+                <li [formGroupName]="i">
+                  <span class="num" [class.edge]="first || last">{{ i + 1 }}</span>
+                  <span class="info">
+                    <strong>{{ stopInfo(group.controls.stopId.value)?.name ?? 'Paradero eliminado' }}</strong>
+                    <small>
+                      {{ stopInfo(group.controls.stopId.value)?.district }}
+                      @if (stopInfo(group.controls.stopId.value)?.status === 'INACTIVE') {
+                        <span class="wp-tag wp-tag--new">Inactivo · reemplázalo</span>
+                      }
+                    </small>
+                  </span>
+                  <label class="time">
+                    <span>{{ first ? 'Salida' : 'Hora estimada' }}</span>
+                    <input type="time" class="wp-input wp-input--sm" formControlName="estimatedTime"
+                           [class.invalid]="showError(group.controls.estimatedTime)" />
+                  </label>
+                  <span class="row-actions">
+                    <button type="button" class="wp-btn wp-btn--icon" (click)="moveStop(i, -1)" [disabled]="first"
+                            [attr.aria-label]="'Subir paradero ' + (i + 1)"><mat-icon aria-hidden="true">arrow_upward</mat-icon></button>
+                    <button type="button" class="wp-btn wp-btn--icon" (click)="moveStop(i, 1)" [disabled]="last"
+                            [attr.aria-label]="'Bajar paradero ' + (i + 1)"><mat-icon aria-hidden="true">arrow_downward</mat-icon></button>
+                    <button type="button" class="wp-btn wp-btn--icon" (click)="removeStop(i)"
+                            [attr.aria-label]="'Quitar paradero ' + (i + 1)"><mat-icon aria-hidden="true">delete_outline</mat-icon></button>
+                  </span>
+                </li>
+              }
+            </ol>
+          } @else {
+            <div class="empty-box">Aún no hay paraderos. Agrega el punto de partida y los siguientes en orden.</div>
+          }
+
+          @if (showError(stops)) {
+            <p class="wp-field-error">
+              @if (stops.hasError('minItems')) { Agrega al menos 2 paraderos (inicio y destino). }
+              @else if (stops.hasError('unordered')) { Las horas deben ir en orden: cada paradero después del anterior. }
+              @else { Revisa las horas de los paraderos. }
+            </p>
+          }
+
+          <div class="add-row">
+            <label class="wp-field">
+              <span class="wp-label">Agregar paradero</span>
+              <select class="wp-input" [value]="stopToAdd()" (change)="onStopToAdd($event)" [disabled]="!availableStops().length">
+                <option value="">{{ availableStops().length ? 'Selecciona un paradero activo' : 'No hay más paraderos activos' }}</option>
+                @for (stop of availableStops(); track stop.id) {
+                  <option [value]="stop.id">{{ stop.name }} · {{ stop.district }}</option>
+                }
+              </select>
+            </label>
+            <button type="button" class="wp-btn wp-btn--secondary" (click)="addStop()" [disabled]="!availableStops().length">
+              <mat-icon aria-hidden="true">add</mat-icon>Agregar
+            </button>
+          </div>
+        </section>
+
+        <section id="route-schedules" class="wp-card" [class.invalid]="showError(schedules)" aria-labelledby="sec-schedules">
+          <div class="wp-card__head">
+            <div>
+              <h2 id="sec-schedules">Horarios de salida *</h2>
+              <p>La llegada se calcula con los tiempos entre paraderos.</p>
+            </div>
+            <button type="button" class="wp-btn wp-btn--secondary wp-btn--md" (click)="addSchedule()">
+              <mat-icon aria-hidden="true">add</mat-icon>Agregar horario
+            </button>
+          </div>
+
+          @if (!schedules.length) {
+            <div class="empty-box" [class.error]="showError(schedules)">Agrega al menos un horario de salida para guardar la ruta.</div>
+          }
+
+          <div formArrayName="schedules" class="schedules">
+            @for (group of schedules.controls; track group; let i = $index) {
+              <div class="schedule" [formGroupName]="i">
+                <label class="wp-field">
+                  <span class="wp-label" style="font-size: 12px">Salida *</span>
+                  <input type="time" class="wp-input wp-input--sm" formControlName="departureTime" style="width: 128px"
+                         [class.invalid]="showError(group.controls.departureTime)" />
+                </label>
+                <div class="wp-field">
+                  <span class="wp-label" style="font-size: 12px" [id]="'days-' + i">Días</span>
+                  <div class="days" role="group" [attr.aria-labelledby]="'days-' + i">
+                    @for (day of weekDays; track day.value) {
+                      <button type="button" [attr.aria-pressed]="group.controls.days.value.includes(day.value)"
+                              [attr.aria-label]="day.label" (click)="toggleDay(i, day.value)">{{ day.short }}</button>
+                    }
+                  </div>
+                </div>
+                <div class="arrival">
+                  <span>Llegada estimada</span>
+                  <strong>{{ arrivalFor(group.controls.departureTime.value) }}</strong>
+                </div>
+                <button type="button" class="wp-btn wp-btn--icon" (click)="removeSchedule(i)" [attr.aria-label]="'Quitar horario ' + (i + 1)">
+                  <mat-icon aria-hidden="true">delete_outline</mat-icon>
+                </button>
+                @if (showError(group.controls.departureTime)) {
+                  <p class="wp-field-error full">Ingresa la hora de salida.</p>
+                } @else if (showError(group.controls.days)) {
+                  <p class="wp-field-error full">Elige al menos un día.</p>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      </form>
+
+      <aside class="preview preview-column" aria-label="Vista previa del recorrido">
+        <div class="preview-head">
+          <span class="overline">Vista previa</span>
+          <div class="title"><span class="code">{{ codePreview() }}</span><strong>{{ namePreview() }}</strong></div>
+        </div>
+        @if (previewStops().length) {
+          <ol class="timeline">
+            @for (stop of previewStops(); track $index; let first = $first; let last = $last) {
+              <li [class.edge]="first || last" [class.last]="last">
+                <span class="marker" aria-hidden="true"><span class="dot"></span><span class="line"></span></span>
+                <span class="info"><strong>{{ stop.name }}</strong><small>{{ stop.district }}@if (stop.inactive) { · inactivo }</small></span>
+                <span class="time">{{ stop.time || '—' }}</span>
+              </li>
+            }
+          </ol>
+        } @else {
+          <p class="preview-empty">Los paraderos que agregues aparecerán aquí en orden.</p>
+        }
+        <div class="stats">
+          <div><span>Duración estimada</span><strong>{{ durationMinutes() !== null ? durationMinutes() + ' min' : '—' }}</strong></div>
+          <div><span>Paraderos</span><strong>{{ previewStops().length }}</strong></div>
+        </div>
+        <p class="note">
+          {{ statusPreview() === 'ACTIVE'
+            ? 'Al guardar, la ruta quedará disponible para planificación y en la búsqueda de los estudiantes.'
+            : 'Al guardar como inactiva, la ruta no podrá asignarse hasta que la actives.' }}
+        </p>
+      </aside>
+    </div>
+  }
+</div>
