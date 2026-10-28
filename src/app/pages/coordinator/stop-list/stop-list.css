@@ -1,0 +1,42 @@
+:host { display: block; min-width: 0; }
+
+.wp-table { min-width: 860px; }
+.pin { color: var(--navy-700); }
+.off .pin { color: var(--ink-500); }
+.off .stack strong { color: var(--ink-700); }
+.muted { color: var(--ink-500); }
+td.muted { color: var(--ink-700); }
+.status { gap: 4px; align-items: flex-start; }
+.icon-only { width: 36px; padding: 0; }
+.icon-only mat-icon { width: 18px; height: 18px; font-size: 18px; }
+.toggle { min-width: 112px; margin-left: 8px; }
+.reactivate { color: var(--success-700) !important; }
+.close { width: 32px; height: 32px; color: inherit; }
+.spinner { margin: 0 auto; }
+
+.backdrop {
+  position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-start; justify-content: center;
+  padding: 10vh 16px 16px; overflow-y: auto; background: rgba(11, 21, 50, 0.55);
+}
+.dialog {
+  width: 100%; max-width: 520px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;
+  padding: 28px; border-radius: var(--radius-lg); background: var(--surface); box-shadow: 0 16px 40px rgba(16, 29, 69, 0.18);
+}
+.dialog:focus { outline: none; }
+.dialog h2 { font-size: 22px; line-height: 30px; font-weight: 700; }
+.icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--radius-sm); }
+.icon.info { background: var(--navy-100); color: var(--navy-700); }
+.icon.warn { background: var(--amber-100); color: var(--amber-800); }
+.subject { margin: -8px 0 0; font-size: 15px; line-height: 22px; color: var(--ink-700); }
+.subject strong { color: var(--ink-900); font-weight: 600; }
+.effects {
+  list-style: none; margin: 0; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  border-radius: var(--radius-md); background: var(--bg-50); font-size: 14px; line-height: 20px;
+}
+.effects li { display: flex; gap: 10px; }
+.effects mat-icon { flex: none; width: 18px; height: 18px; font-size: 18px; margin-top: 1px; }
+.no { color: var(--error-600); }
+.mid { color: var(--amber-800); }
+.ok { color: var(--success-600); }
+.optional { font-weight: 400; color: var(--ink-500); }
+.dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; padding-top: 8px; }

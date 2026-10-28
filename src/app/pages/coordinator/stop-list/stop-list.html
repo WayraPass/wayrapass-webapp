@@ -1,0 +1,170 @@
+<header class="wp-page-header">
+  <div class="wp-page-header__row">
+    <div>
+      <h1>Rutas y paraderos</h1>
+      <p>Planifica los recorridos disponibles del servicio.</p>
+    </div>
+    <button type="button" class="wp-btn wp-btn--primary" (click)="openForm()">
+      <mat-icon aria-hidden="true">add</mat-icon>Nuevo paradero
+    </button>
+  </div>
+  <nav class="wp-tabs" aria-label="Secciones">
+    <a routerLink="/coordinator/routes">Rutas @if (routeCount() !== null) { <span class="count">{{ routeCount() }}</span> }</a>
+    <a class="active" routerLink="/coordinator/stops" aria-current="page">Paraderos <span class="count">{{ stops().length }}</span></a>
+  </nav>
+</header>
+
+<div class="wp-page-body">
+  @if (notice(); as n) {
+    <div class="wp-alert" [class.wp-alert--success]="n.kind === 'success'" [class.wp-alert--error]="n.kind === 'error'"
+         [attr.role]="n.kind === 'error' ? 'alert' : 'status'">
+      <mat-icon aria-hidden="true">{{ n.kind === 'success' ? 'check_circle' : 'error' }}</mat-icon>
+      <span class="wp-alert__body">{{ n.text }}</span>
+      <button type="button" class="wp-btn wp-btn--icon close" (click)="notice.set(null)" aria-label="Cerrar aviso">
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <div class="wp-toolbar">
+    <label class="wp-search">
+      <span class="wp-sr-only">Buscar paradero</span>
+      <mat-icon aria-hidden="true">search</mat-icon>
+      <input class="wp-input" type="search" [value]="query()" (input)="onSearch($event)" placeholder="Buscar por nombre o distrito" />
+    </label>
+    <span class="spacer">{{ activeCount() }} activos · {{ inactiveCount() }} inactivos</span>
+  </div>
+
+  @if (loading()) {
+    <div class="wp-table-wrap wp-empty"><mat-spinner diameter="32" class="spinner" /></div>
+  } @else {
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead>
+          <tr>
+            <th scope="col">Paradero</th>
+            <th scope="col">Distrito</th>
+            <th scope="col">Rutas que lo usan</th>
+            <th scope="col">Estado</th>
+            <th scope="col" class="actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (stop of rows(); track stop.id) {
+            <tr [class.off]="stop.status === 'INACTIVE'">
+              <td>
+                <div class="primary-cell">
+                  <mat-icon class="pin" aria-hidden="true">place</mat-icon>
+                  <span class="stack">
+                    <strong>{{ stop.name }}</strong>
+                    <small>{{ stop.reference || 'Sin referencia' }}</small>
+                  </span>
+                </div>
+              </td>
+              <td class="muted">{{ stop.district }}</td>
+              <td>
+                <div class="chips">
+                  @for (code of stop.routeCodes; track code) { <span class="wp-tag wp-tag--route">{{ code }}</span> }
+                  @empty { <span class="muted">Ninguna</span> }
+                </div>
+              </td>
+              <td>
+                <div class="stack status">
+                  
+                  <app-status-badge [status]="stop.status" gender="m" />
+                  @if (stop.status === 'INACTIVE') {
+                    <small>Desde {{ stop.inactiveSince | date: 'dd/MM' }}{{ stop.inactiveReason ? ' · ' + stop.inactiveReason : '' }}</small>
+                  }
+                </div>
+              </td>
+              <td class="actions">
+                <button type="button" class="wp-btn wp-btn--subtle wp-btn--sm icon-only" (click)="openForm(stop)"
+                        [attr.aria-label]="'Editar ' + stop.name">
+                  <mat-icon aria-hidden="true">edit</mat-icon>
+                </button>
+                @if (stop.status === 'ACTIVE') {
+                  <button type="button" class="wp-btn wp-btn--subtle wp-btn--sm toggle" (click)="askDeactivate(stop)">Desactivar</button>
+                } @else {
+                  <button type="button" class="wp-btn wp-btn--subtle wp-btn--sm toggle reactivate" (click)="reactivate(stop)">Reactivar</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="wp-empty"><strong>No hay paraderos que coincidan</strong><span>Prueba con otro nombre o distrito.</span></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <p class="wp-hint">Un paradero inactivo no se elimina: deja de ofrecerse al crear rutas y en nuevas asignaciones, y conserva su historial de viajes y abordajes.</p>
+</div>
+
+@if (formOpen()) {
+  <div class="backdrop" (click)="closeDialogs()" (keydown.escape)="closeDialogs()">
+    <form #dialogBox class="dialog" role="dialog" aria-modal="true" aria-labelledby="stop-form-title" tabindex="-1"
+          [formGroup]="form" (ngSubmit)="saveStop()" (click)="$event.stopPropagation()" novalidate>
+      <span class="icon info" aria-hidden="true"><mat-icon>place</mat-icon></span>
+      <h2 id="stop-form-title">{{ editingId() ? 'Editar paradero' : 'Nuevo paradero' }}</h2>
+
+      @if (formError()) {
+        <div class="wp-alert wp-alert--error" role="alert"><mat-icon aria-hidden="true">error</mat-icon><span>{{ formError() }}</span></div>
+      }
+
+      <div class="wp-field">
+        <label for="stop-name">Nombre *</label>
+        <input id="stop-name" class="wp-input" formControlName="name" placeholder="Av. Javier Prado / Av. Aviación" />
+        @if (form.controls.name.invalid && form.controls.name.touched) { <p class="wp-field-error">Ingresa el nombre del paradero.</p> }
+      </div>
+      <div class="wp-field">
+        <label for="stop-district">Distrito *</label>
+        <select id="stop-district" class="wp-input" formControlName="district">
+          <option value="" disabled>Selecciona un distrito</option>
+          @for (district of districts; track district) { <option [value]="district">{{ district }}</option> }
+        </select>
+        @if (form.controls.district.invalid && form.controls.district.touched) { <p class="wp-field-error">Elige el distrito.</p> }
+      </div>
+      <div class="wp-field">
+        <label for="stop-reference">Referencia <span class="optional">(opcional)</span></label>
+        <input id="stop-reference" class="wp-input" formControlName="reference" placeholder="Ej.: frente al mercado" />
+      </div>
+
+      <div class="dialog-actions">
+        <button type="button" class="wp-btn wp-btn--secondary" (click)="closeDialogs()">Cancelar</button>
+        <button type="submit" class="wp-btn wp-btn--primary" [disabled]="saving()">{{ editingId() ? 'Guardar cambios' : 'Registrar paradero' }}</button>
+      </div>
+    </form>
+  </div>
+}
+
+@if (confirmFor(); as stop) {
+  <div class="backdrop" (click)="closeDialogs()" (keydown.escape)="closeDialogs()">
+    <div #dialogBox class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" tabindex="-1"
+         (click)="$event.stopPropagation()">
+      <span class="icon warn" aria-hidden="true"><mat-icon>power_settings_new</mat-icon></span>
+      <h2 id="confirm-title">¿Marcar este paradero como inactivo?</h2>
+      <p class="subject"><strong>{{ stop.name }}</strong> · {{ stop.district }}</p>
+
+      <ul class="effects">
+        <li><mat-icon class="no" aria-hidden="true">close</mat-icon>Dejará de ofrecerse al crear rutas y en nuevas asignaciones.</li>
+        @if (stop.routeCodes.length) {
+          <li><mat-icon class="mid" aria-hidden="true">info</mat-icon>
+            {{ stop.routeCodes.length === 1 ? 'La ruta ' + stop.routeCodes[0] + ' lo mostrará' : 'Las rutas ' + stop.routeCodes.join(', ') + ' lo mostrarán' }}
+            con un aviso para que lo reemplaces.</li>
+        }
+        <li><mat-icon class="ok" aria-hidden="true">check</mat-icon>Se conserva su historial de viajes y abordajes. Puedes reactivarlo cuando quieras.</li>
+      </ul>
+
+      <label class="wp-field">
+        <span class="wp-label">Motivo <span class="optional">(opcional)</span></span>
+        <textarea class="wp-input" rows="2" maxlength="120" placeholder="Ej.: obras en la vía hasta fin de mes"
+                  [value]="reason()" (input)="onReason($event)"></textarea>
+      </label>
+
+      <div class="dialog-actions">
+        <button type="button" class="wp-btn wp-btn--secondary" (click)="closeDialogs()">Cancelar</button>
+        <button type="button" class="wp-btn wp-btn--primary" (click)="confirmDeactivate()">Marcar como inactivo</button>
+      </div>
+    </div>
+  </div>
+}

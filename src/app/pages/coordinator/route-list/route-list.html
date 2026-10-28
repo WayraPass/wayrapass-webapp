@@ -1,0 +1,120 @@
+<header class="wp-page-header">
+  <div class="wp-page-header__row">
+    <div>
+      <h1>Rutas y paraderos</h1>
+      <p>Planifica los recorridos disponibles del servicio.</p>
+    </div>
+    <a class="wp-btn wp-btn--primary" routerLink="/coordinator/routes/new">
+      <mat-icon aria-hidden="true">add</mat-icon>Nueva ruta
+    </a>
+  </div>
+  <nav class="wp-tabs" aria-label="Secciones">
+    <a class="active" routerLink="/coordinator/routes" aria-current="page">Rutas <span class="count">{{ routes().length }}</span></a>
+    <a routerLink="/coordinator/stops">Paraderos @if (stopCount() !== null) { <span class="count">{{ stopCount() }}</span> }</a>
+  </nav>
+</header>
+
+<div class="wp-page-body">
+  @if (savedRoute(); as saved) {
+    <div class="wp-alert wp-alert--success" role="status">
+      <mat-icon aria-hidden="true">check_circle</mat-icon>
+      <span class="wp-alert__body">
+        @if (savedMode === 'created') {
+          <span><strong>Ruta {{ saved.code }} {{ saved.name }} creada.</strong>
+            {{ saved.status === 'ACTIVE' ? 'Ya está disponible para planificación.' : 'Quedó guardada como inactiva.' }}</span>
+        } @else {
+          <span><strong>Ruta {{ saved.code }} actualizada.</strong> Los cambios ya se aplican a la planificación.</span>
+        }
+      </span>
+      <button type="button" class="wp-btn wp-btn--icon close" (click)="dismissSaved()" aria-label="Cerrar aviso">
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="wp-alert wp-alert--error" role="alert">
+      <mat-icon aria-hidden="true">error</mat-icon><span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <div class="wp-toolbar">
+    <label class="wp-search">
+      <span class="wp-sr-only">Buscar ruta</span>
+      <mat-icon aria-hidden="true">search</mat-icon>
+      <input class="wp-input" type="search" [value]="query()" (input)="onSearch($event)"
+             placeholder="Buscar por código, distrito o institución" />
+    </label>
+    <div class="wp-segmented" role="group" aria-label="Filtrar por estado">
+      @for (option of filters; track option.value) {
+        <button type="button" [attr.aria-pressed]="statusFilter() === option.value"
+                (click)="statusFilter.set(option.value)">{{ option.label }}</button>
+      }
+    </div>
+    <span class="spacer">{{ resultLabel() }}</span>
+  </div>
+
+  @if (loading()) {
+    <div class="wp-table-wrap wp-empty"><mat-spinner diameter="32" class="spinner" /></div>
+  } @else {
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead>
+          <tr>
+            <th scope="col">Ruta</th>
+            <th scope="col">Destino</th>
+            <th scope="col" class="num">Paraderos</th>
+            <th scope="col">Salidas</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Actualizado</th>
+            <th scope="col" class="actions"><span class="wp-sr-only">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (route of visibleRoutes(); track route.id) {
+            <tr [class.highlight]="route.id === savedId()">
+              <td>
+                <div class="primary-cell">
+                  <span class="wp-code">{{ route.code }}</span>
+                  <span class="stack">
+                    <strong>{{ route.name }}</strong>
+                    <small>Origen: {{ route.origin }}</small>
+                  </span>
+                  @if (route.id === savedId()) {
+                    <span class="wp-tag wp-tag--new">{{ savedMode === 'created' ? 'Nueva' : 'Actualizada' }}</span>
+                  }
+                </div>
+              </td>
+              <td>{{ route.destination }}</td>
+              <td class="num">{{ route.stops.length }}</td>
+              <td>
+                <div class="chips">
+                  @for (schedule of route.schedules; track $index) {
+                    <span class="wp-tag wp-tag--time">{{ schedule.departureTime }}</span>
+                  }
+                </div>
+              </td>
+              <td><app-status-badge [status]="route.status" gender="f" /></td>
+              <td class="date">{{ route.updatedAt | date: 'dd/MM/yyyy' }}</td>
+              <td class="actions">
+                <a class="wp-btn wp-btn--subtle wp-btn--sm" [routerLink]="['/coordinator/routes', route.id, 'edit']"
+                   [attr.aria-label]="'Editar ruta ' + route.code">
+                  <mat-icon aria-hidden="true">edit</mat-icon>Editar
+                </a>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="wp-empty">
+                <strong>No hay rutas que coincidan</strong>
+                <span>Prueba con otro código, distrito o institución.</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <p class="wp-hint">Las rutas inactivas conservan su historial, pero no aparecen en nuevas asignaciones ni en la búsqueda de los estudiantes.</p>
+</div>

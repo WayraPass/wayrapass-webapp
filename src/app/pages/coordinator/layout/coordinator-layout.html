@@ -1,0 +1,40 @@
+<div class="wp-app shell">
+  <nav class="sidebar" aria-label="Menú del coordinador">
+    <a class="brand" routerLink="/coordinator/routes" aria-label="WayraPass, inicio">
+      <span class="brand-mark" aria-hidden="true">W</span>
+      <span class="brand-word">WAYRA<span>PASS</span></span>
+    </a>
+
+    <div class="nav">
+      <span class="nav-title">Coordinación</span>
+      @for (item of navItems; track item.label) {
+        @if (item.link) {
+          <a class="nav-item" [routerLink]="item.link" [class.active]="isActive(item)"
+             [attr.aria-current]="isActive(item) ? 'page' : null">
+            <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>{{ item.label }}
+          </a>
+        } @else {
+          <span class="nav-item disabled" aria-disabled="true" title="Se implementa en otra User Story">
+            <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>{{ item.label }}
+            <small>Pronto</small>
+          </span>
+        }
+      }
+    </div>
+
+    <div class="user">
+      <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+      <span class="who">
+        <strong>{{ user()?.fullName }}</strong>
+        <small>Coordinador de transporte</small>
+      </span>
+      <button type="button" class="logout" (click)="logout()" aria-label="Cerrar sesión" title="Cerrar sesión">
+        <mat-icon aria-hidden="true">logout</mat-icon>
+      </button>
+    </div>
+  </nav>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
