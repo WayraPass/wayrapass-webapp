@@ -8,6 +8,7 @@ import { CoordinatorDashboard } from './pages/coordinator/dashboard/dashboard';
 import { DriverDashboard } from './pages/driver/dashboard/dashboard';
 import { FamilyDashboard } from './pages/family/dashboard/dashboard';
 import { StudentDashboard } from './pages/student/dashboard/dashboard';
+import { TripHistory } from './pages/trip-history/trip-history';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },

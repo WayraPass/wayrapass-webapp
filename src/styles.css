@@ -26,6 +26,7 @@ button, input { font: inherit; }
   gap: 10px;
   flex-shrink: 0;
   text-decoration: none;
+  user-select: none;
 }
 
 .brand-mark,
@@ -58,6 +59,8 @@ button, input { font: inherit; }
   font-style: italic;
   font-weight: 900;
   letter-spacing: 0.6px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .brand-word span,
