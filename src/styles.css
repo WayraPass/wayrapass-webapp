@@ -91,8 +91,9 @@ button, input { font: inherit; }
 
 .auth-page { min-height: 100vh; display: grid; grid-template-columns: minmax(460px, 1fr) minmax(570px, 1.12fr); }
 .auth-brand-panel { min-height: 100vh; display: flex; flex-direction: column; padding: clamp(34px, 4.6vw, 72px); color: #fff; background: linear-gradient(145deg, #0a2344, #14254a 68%, #10213f); }
-.wordmark, .mobile-wordmark { display: inline-flex; width: fit-content; color: #fff; text-decoration: none; font-family: 'Manrope', Arial, sans-serif; font-size: clamp(24px, 2.2vw, 34px); font-style: italic; font-weight: 800; letter-spacing: -1.2px; }
-.wordmark strong, .mobile-wordmark strong { color: var(--wp-yellow); }
+.wordmark, .mobile-wordmark { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: #fff; text-decoration: none; }
+.wordmark .wp-brand-name, .mobile-wordmark .wp-brand-name { color: #fff; }
+.wordmark .wp-brand-accent, .mobile-wordmark .wp-brand-accent { color: #efb640; }
 .brand-copy { width: min(100%, 620px); margin: auto 0; padding: 48px 0; }
 .brand-copy h1 { margin: 0; font-family: 'Manrope', Arial, sans-serif; font-size: clamp(38px, 4vw, 58px); line-height: 1.06; letter-spacing: -2.1px; }
 .brand-copy > p { max-width: 600px; margin: 18px 0 0; color: rgba(255,255,255,.8); font-size: clamp(16px,1.45vw,21px); line-height: 1.45; }
