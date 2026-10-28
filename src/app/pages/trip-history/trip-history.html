@@ -1,0 +1,140 @@
+<div class="history-shell">
+  <aside class="sidebar" aria-label="Navegación principal">
+    <a class="brand" href="/historial-rutas" aria-label="WayraPass, historial de viajes">
+      <span class="brand-mark" aria-hidden="true">W</span>
+      <span class="brand-word">WAYRA<span>PASS</span></span>
+    </a>
+
+    <nav class="navigation">
+      <span class="nav-item"><mat-icon>directions_bus</mat-icon><span>Buses en vivo</span></span>
+      <span class="nav-item"><mat-icon>alt_route</mat-icon><span>Mis rutas</span></span>
+      <a class="nav-item active" href="/historial-rutas" aria-current="page"><mat-icon>history</mat-icon><span>Mis viajes</span></a>
+      <span class="nav-item"><mat-icon>notifications_none</mat-icon><span>Avisos</span></span>
+      <span class="nav-item"><mat-icon>settings</mat-icon><span>Ajustes</span></span>
+    </nav>
+
+    <div class="user-card">
+      <span class="user-avatar" aria-hidden="true">{{ initials() }}</span>
+      <div class="user-meta">
+        <strong>{{ user()?.fullName ?? 'Usuario' }}</strong>
+        <small>{{ userRoleLabel() }}</small>
+      </div>
+      <button type="button" class="logout-button" aria-label="Cerrar sesión" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">TU MOVILIDAD</p>
+        <h1>Historial de viajes</h1>
+        <p class="subtitle">Revisa tus traslados en los buses de <strong>Universidad</strong>.</p>
+      </div>
+      <span class="role-badge"><mat-icon>school</mat-icon> {{ userRoleLabel() }}</span>
+    </header>
+
+    <div class="content-grid">
+      <section class="panel trips-panel" aria-labelledby="trips-heading">
+        <div class="panel-heading">
+          <div>
+            <h2 id="trips-heading">Mis viajes</h2>
+            <p>Selecciona un viaje para ver el detalle del recorrido.</p>
+          </div>
+          <span class="trip-count">{{ trips.length }} viajes</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Fecha</th>
+                <th scope="col">Ruta</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Salida</th>
+                <th scope="col">Llegada</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (trip of visibleTrips(); track trip.id) {
+                <tr
+                  class="trip-row"
+                  [class.selected]="selectedTrip()?.id === trip.id"
+                  [attr.aria-selected]="selectedTrip()?.id === trip.id"
+                  tabindex="0"
+                  (click)="selectTrip(trip)"
+                  (keydown.enter)="selectTrip(trip)"
+                  (keydown.space)="selectTrip(trip); $event.preventDefault()">
+                  <td data-label="Fecha"><strong>{{ trip.date }}</strong></td>
+                  <td data-label="Ruta">{{ trip.route }}</td>
+                  <td data-label="Tipo">{{ trip.direction }}</td>
+                  <td data-label="Salida">{{ trip.departure }}</td>
+                  <td data-label="Llegada">{{ trip.arrival }}</td>
+                  <td data-label="Estado"><span class="status" [class.delayed]="trip.status === 'Con retraso'" [class.missed]="trip.status === 'No abordado'" [class.complete]="trip.status === 'Completado'"><span></span>{{ trip.status }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="pagination">
+          <span class="pagination-summary">Mostrando {{ (currentPage() - 1) * 6 + 1 }}–{{ (currentPage() - 1) * 6 + visibleTrips().length }} de {{ trips.length }} viajes</span>
+          <div class="pagination-controls" aria-label="Paginación">
+            <button type="button" class="page-button page-label" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+              <mat-icon>chevron_left</mat-icon><span>Anterior</span>
+            </button>
+            @for (page of [1, 2]; track page) {
+              @if (page <= pageCount) {
+                <button type="button" class="page-button page-number" [class.current]="currentPage() === page" [attr.aria-current]="currentPage() === page ? 'page' : null" (click)="goToPage(page)">{{ page }}</button>
+              }
+            }
+            <button type="button" class="page-button page-label" [disabled]="currentPage() === pageCount" (click)="goToPage(currentPage() + 1)">
+              <span>Siguiente</span><mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+        </footer>
+      </section>
+
+      <aside class="panel detail-panel" aria-labelledby="detail-heading">
+        <div class="panel-heading detail-heading">
+          <div>
+            <p class="eyebrow">INFORMACIÓN DEL VIAJE</p>
+            <h2 id="detail-heading">Detalle del recorrido</h2>
+          </div>
+        </div>
+
+        @if (selectedTrip(); as trip) {
+          <div class="route-title">
+            <div>
+              <h3>{{ trip.route }} <span aria-hidden="true">→</span><br />Universidad</h3>
+              <p>{{ trip.date }} <span aria-hidden="true">·</span> {{ trip.direction }}</p>
+            </div>
+            <span class="status" [class.delayed]="trip.status === 'Con retraso'" [class.missed]="trip.status === 'No abordado'" [class.complete]="trip.status === 'Completado'"><span></span>{{ trip.status }}</span>
+          </div>
+
+          <div class="trip-facts">
+            <div class="fact"><span>Bus</span><strong>{{ trip.bus }}</strong></div>
+            <div class="fact"><span>Duración</span><strong>{{ trip.duration === null ? '—' : trip.duration + ' min' }}</strong></div>
+            <div class="fact"><span>Salida</span><strong>{{ trip.departure }}</strong></div>
+            <div class="fact"><span>Llegada</span><strong>{{ trip.arrival }}</strong></div>
+          </div>
+
+          <h3 class="stops-heading">Paradas del recorrido</h3>
+          <ol class="stop-list">
+            @for (stop of trip.stops; track $index; let last = $last) {
+              <li [class.last]="last">
+                <span class="stop-marker" aria-hidden="true"></span>
+                <span class="stop-name">{{ stop.name }}</span>
+                <time>{{ stop.time }}</time>
+              </li>
+            }
+          </ol>
+        }
+      </aside>
+    </div>
+
+    <p class="demo-note">Vista de demostración con viajes de ejemplo.</p>
+  </main>
+</div>
