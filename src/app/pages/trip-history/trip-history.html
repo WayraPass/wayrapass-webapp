@@ -1,7 +1,8 @@
 <div class="history-shell">
   <aside class="sidebar" aria-label="Navegación principal">
     <a class="brand" href="/historial-rutas" aria-label="WayraPass, historial de viajes">
-      <span>WAYRA<span class="brand-accent">PASS</span></span>
+      <span class="brand-mark" aria-hidden="true">W</span>
+      <span class="brand-word">WAYRA<span>PASS</span></span>
     </a>
 
     <nav class="navigation">
@@ -12,6 +13,16 @@
       <span class="nav-item"><mat-icon>settings</mat-icon><span>Ajustes</span></span>
     </nav>
 
+    <div class="user-card">
+      <span class="user-avatar" aria-hidden="true">{{ initials() }}</span>
+      <div class="user-meta">
+        <strong>{{ user()?.fullName ?? 'Usuario' }}</strong>
+        <small>{{ userRoleLabel() }}</small>
+      </div>
+      <button type="button" class="logout-button" aria-label="Cerrar sesión" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
   </aside>
 
   <main class="main-content">
@@ -21,7 +32,7 @@
         <h1>Historial de viajes</h1>
         <p class="subtitle">Revisa tus traslados en los buses de <strong>Universidad</strong>.</p>
       </div>
-      <span class="role-badge"><mat-icon>school</mat-icon> Estudiante</span>
+      <span class="role-badge"><mat-icon>school</mat-icon> {{ userRoleLabel() }}</span>
     </header>
 
     <div class="content-grid">

@@ -1,5 +1,7 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { AuthService, roleLabel } from '../../core/services/auth.service';
 
 type TripStatus = 'Completado' | 'Con retraso' | 'No abordado';
 type Stop = { name: string; time: string };
@@ -31,6 +33,19 @@ const ROUTE_STOPS: Stop[] = [
   styleUrl: './trip-history.css',
 })
 export class TripHistory {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  readonly user = this.auth.user;
+  readonly userRoleLabel = computed(() => this.user() ? roleLabel(this.user()!.role) : 'Usuario');
+  readonly initials = computed(() =>
+    (this.user()?.fullName ?? '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0]!.toUpperCase())
+      .join(''),
+  );
+
   private readonly pageSize = 6;
   readonly currentPage = signal(1);
   readonly selectedTrip = signal<Trip | null>(null);
@@ -63,5 +78,10 @@ export class TripHistory {
   goToPage(page: number): void {
     if (page < 1 || page > this.pageCount) return;
     this.currentPage.set(page);
+  }
+
+  logout(): void {
+    this.auth.logout();
+    void this.router.navigateByUrl('/login');
   }
 }
