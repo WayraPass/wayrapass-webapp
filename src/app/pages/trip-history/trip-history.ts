@@ -1,9 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, Injector, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { finalize } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { FamilyTripHistoryDetail } from '../../core/models/family.models';
+import { FamilyService, familyErrorMessage } from '../../core/services/family.service';
 import {
   BoardingStatus,
   IncidentPriority,
@@ -25,10 +28,16 @@ import { TripService, historyErrorMessage } from '../../core/services/trip.servi
 export class TripHistory {
   private readonly fb = inject(FormBuilder);
   private readonly tripsService = inject(TripService);
+  private readonly injector = inject(Injector);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+
+  readonly familyMode = Boolean(this.route?.snapshot.data['familyMode']);
+  readonly studentIds = signal<number[]>([]);
+  readonly selectedStudentId = signal<number | null>(null);
 
   readonly trips = signal<TripHistoryItem[]>([]);
   readonly selectedTripId = signal<number | null>(null);
-  readonly detail = signal<StudentTripHistoryDetail | null>(null);
+  readonly detail = signal<StudentTripHistoryDetail | FamilyTripHistoryDetail | null>(null);
   readonly loading = signal(false);
   readonly detailLoading = signal(false);
   readonly errorMessage = signal('');
@@ -40,7 +49,35 @@ export class TripHistory {
   });
 
   constructor() {
+    if (this.familyMode) this.loadFamilyStudents();
+    else this.loadHistory();
+  }
+
+  loadFamilyStudents(): void {
+    this.loading.set(true);
+    this.errorMessage.set('');
+    this.familyService.getLinkedStudentIds().subscribe({
+      next: (ids) => {
+        this.studentIds.set(ids);
+        if (ids.length) this.selectStudent(ids[0]!);
+        else this.loading.set(false);
+      },
+      error: (error: unknown) => {
+        this.loading.set(false);
+        this.errorMessage.set(familyErrorMessage(error));
+      },
+    });
+  }
+
+  selectStudent(studentId: number): void {
+    this.selectedStudentId.set(studentId);
+    this.selectedTripId.set(null);
+    this.detail.set(null);
     this.loadHistory();
+  }
+
+  studentLabel(studentId: number): string {
+    return `Estudiante vinculado ${this.studentIds().indexOf(studentId) + 1}`;
   }
 
   loadHistory(): void {
@@ -51,8 +88,14 @@ export class TripHistory {
       return;
     }
 
+    const studentId = this.selectedStudentId();
+    if (this.familyMode && !studentId) return;
+
     this.loading.set(true);
-    this.tripsService.getHistory(from, to).pipe(
+    const request = this.familyMode
+      ? this.familyService.getHistory(studentId!, from, to)
+      : this.tripsService.getHistory(from, to);
+    request.pipe(
       finalize(() => this.loading.set(false)),
     ).subscribe({
       next: (trips) => {
@@ -65,7 +108,7 @@ export class TripHistory {
           this.detail.set(null);
         }
       },
-      error: (error: unknown) => this.errorMessage.set(historyErrorMessage(error)),
+      error: (error: unknown) => this.errorMessage.set(this.errorText(error)),
     });
   }
 
@@ -74,17 +117,25 @@ export class TripHistory {
     this.detail.set(null);
     this.detailError.set('');
     this.detailLoading.set(true);
-    this.tripsService.getHistoryDetail(trip.tripId).pipe(
+    const request = this.familyMode
+      ? this.familyService.getHistoryDetail(this.selectedStudentId()!, trip.tripId)
+      : this.tripsService.getHistoryDetail(trip.tripId);
+    request.pipe(
       finalize(() => this.detailLoading.set(false)),
     ).subscribe({
       next: (detail) => this.detail.set(detail),
-      error: (error: unknown) => this.detailError.set(historyErrorMessage(error)),
+      error: (error: unknown) => this.detailError.set(this.errorText(error)),
     });
   }
 
   retryDetail(): void {
     const selected = this.trips().find((trip) => trip.tripId === this.selectedTripId());
     if (selected) this.selectTrip(selected);
+  }
+
+  retry(): void {
+    if (this.familyMode && !this.studentIds().length) this.loadFamilyStudents();
+    else this.loadHistory();
   }
 
   tripStatusLabel(status: TripStatus): string {
@@ -105,6 +156,18 @@ export class TripHistory {
 
   incidentStatusLabel(status: IncidentStatus): string {
     return status === 'OPEN' ? 'Abierta' : 'Resuelta';
+  }
+
+  studentDetail(detail: StudentTripHistoryDetail | FamilyTripHistoryDetail): StudentTripHistoryDetail | null {
+    return 'vehiclePlate' in detail ? detail : null;
+  }
+
+  private get familyService(): FamilyService {
+    return this.injector.get(FamilyService);
+  }
+
+  private errorText(error: unknown): string {
+    return this.familyMode ? familyErrorMessage(error, 'No se pudo consultar el historial.') : historyErrorMessage(error);
   }
 }
 
