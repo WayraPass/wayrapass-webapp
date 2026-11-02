@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthService, DEMO_PASSWORD, authErrorMessage, roleLabel } from '../../../core/services/auth.service';
+import { AuthService, authErrorMessage, roleLabel } from '../../../core/services/auth.service';
 import { UserRole } from '../../../core/models/auth.models';
 
 interface RoleOption {
@@ -14,7 +14,6 @@ interface RoleOption {
   label: string;
   shortDescription: string;
   description: string;
-  email: string;
 }
 
 @Component({
@@ -31,12 +30,11 @@ export class Login {
   private readonly route = inject(ActivatedRoute);
 
   readonly roles: ReadonlyArray<RoleOption> = [
-    { role: 'STUDENT', label: 'Estudiante', shortDescription: 'Universidad o instituto', description: 'Ve los buses, paraderos y avisos de tu ruta.', email: 'student.demo@wayrapass.test' },
-    { role: 'FAMILY', label: 'Familiar', shortDescription: 'Autorizado', description: 'Sigue el viaje del estudiante que tienes asociado.', email: 'family.demo@wayrapass.test' },
-    { role: 'DRIVER', label: 'Chofer', shortDescription: 'Conductor del bus', description: 'Consulta tu ruta, paraderos y horarios del día.', email: 'driver.demo@wayrapass.test' },
-    { role: 'COORDINATOR', label: 'Coordinador', shortDescription: 'De transporte', description: 'Gestiona rutas, buses y avisos del servicio.', email: 'coordinator.demo@wayrapass.test' },
+    { role: 'STUDENT', label: 'Estudiante', shortDescription: 'Universidad o instituto', description: 'Ve los buses, paraderos y avisos de tu ruta.' },
+    { role: 'FAMILY', label: 'Familiar', shortDescription: 'Autorizado', description: 'Sigue el viaje del estudiante que tienes asociado.' },
+    { role: 'DRIVER', label: 'Chofer', shortDescription: 'Conductor del bus', description: 'Consulta tu ruta, paraderos y horarios del día.' },
+    { role: 'COORDINATOR', label: 'Coordinador', shortDescription: 'De transporte', description: 'Gestiona rutas, buses y avisos del servicio.' },
   ];
-  readonly demoPassword = DEMO_PASSWORD;
   readonly selectedRole = signal<UserRole>('STUDENT');
   readonly loading = signal(false);
   readonly showPassword = signal(false);
@@ -62,11 +60,6 @@ export class Login {
   selectRole(role: UserRole): void {
     this.selectedRole.set(role);
     this.errorMessage.set('');
-  }
-
-  useDemo(option: RoleOption): void {
-    this.selectRole(option.role);
-    this.form.patchValue({ email: option.email, password: DEMO_PASSWORD });
   }
 
   submit(): void {

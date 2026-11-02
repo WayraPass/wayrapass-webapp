@@ -1,5 +1,15 @@
-import { Component } from '@angular/core';
-import { DashboardShell } from '../../shared/dashboard-shell/dashboard-shell';
+import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { AuthService } from '../../../core/services/auth.service';
 
-@Component({ selector: 'app-student-dashboard', standalone: true, imports: [DashboardShell], template: '<app-dashboard-shell roleName="Estudiante" eyebrow="Acceso de estudiante" description="Busca las rutas disponibles para tu institución y guarda tus opciones favoritas." icon="school" actionLabel="Buscar rutas" actionLink="/student/routes" actionIcon="route"></app-dashboard-shell>' })
-export class StudentDashboard {}
+@Component({
+  selector: 'app-student-dashboard',
+  standalone: true,
+  imports: [RouterLink, MatIconModule],
+  templateUrl: './dashboard.html',
+  styleUrl: './dashboard.css',
+})
+export class StudentDashboard {
+  readonly user = inject(AuthService).user;
+}

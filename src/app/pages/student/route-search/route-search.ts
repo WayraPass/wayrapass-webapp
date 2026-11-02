@@ -1,7 +1,7 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -37,7 +37,6 @@ export class StudentRouteSearch {
   private readonly fb = inject(FormBuilder);
   private readonly routesService = inject(RouteService);
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly user = this.auth.user;
@@ -197,11 +196,6 @@ export class StudentRouteSearch {
 
   shortTime(value: string): string {
     return value.slice(0, 5);
-  }
-
-  logout(): void {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
   }
 
   private observeDistrict(): void {

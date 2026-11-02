@@ -170,14 +170,6 @@ button, input { font: inherit; }
 .form-alert.blocked { display: flex; align-items: center; gap: 11px; color: #7a3b11; border-color: #f1cf9e; background: #fff7e7; }
 .form-alert.blocked span, .form-alert.blocked strong { display: block; }
 
-.demo-access { margin-top: 16px; color: #5d6a78; border-top: 1px solid #e1e5e9; font-size: 12px; }
-.demo-access summary { padding-top: 14px; color: #17607e; font-weight: 700; cursor: pointer; }
-.demo-access p { margin: 10px 0; }
-.demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-.demo-grid button { padding: 9px 10px; color: var(--wp-navy); text-align: left; border: 1px solid #dbe0e5; border-radius: 9px; background: #f7f8f8; cursor: pointer; }
-.demo-grid span, .demo-grid small { display: block; }
-.demo-grid small { margin-top: 2px; color: #697683; overflow-wrap: anywhere; }
-
 .compact-auth-page .auth-brand-panel { min-height: 100vh; }
 .compact-list { margin-top: 28px; }
 .register-card { width: min(100%, 600px); }

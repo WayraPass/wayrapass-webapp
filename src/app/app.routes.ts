@@ -7,7 +7,6 @@ import { ResetPassword } from './pages/auth/reset-password/reset-password';
 import { CoordinatorDashboard } from './pages/coordinator/dashboard/dashboard';
 import { DriverDashboard } from './pages/driver/dashboard/dashboard';
 import { FamilyDashboard } from './pages/family/dashboard/dashboard';
-import { StudentDashboard } from './pages/student/dashboard/dashboard';
 import { TripHistory } from './pages/trip-history/trip-history';
 
 export const routes: Routes = [
@@ -16,12 +15,16 @@ export const routes: Routes = [
   { path: 'register', component: Register },
   { path: 'forgot-password', component: ForgotPassword },
   { path: 'reset-password', component: ResetPassword },
-  { path: 'student/dashboard', component: StudentDashboard, canActivate: [authGuard, roleGuard('STUDENT')] },
   {
-    path: 'student/routes',
-    loadComponent: () => import('./pages/student/route-search/route-search').then((m) => m.StudentRouteSearch),
+    path: 'student',
+    loadComponent: () => import('./pages/student/layout/student-layout').then((m) => m.StudentLayout),
     canActivate: [authGuard, roleGuard('STUDENT')],
-    title: 'Buscar rutas · WayraPass',
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', loadComponent: () => import('./pages/student/dashboard/dashboard').then((m) => m.StudentDashboard), title: 'Inicio · WayraPass' },
+      { path: 'routes', loadComponent: () => import('./pages/student/route-search/route-search').then((m) => m.StudentRouteSearch), title: 'Buscar rutas · WayraPass' },
+      { path: 'current-trip', loadComponent: () => import('./pages/student/current-trip/current-trip').then((m) => m.CurrentTrip), title: 'Mi viaje actual · WayraPass' },
+    ],
   },
   { path: 'family/dashboard', component: FamilyDashboard, canActivate: [authGuard, roleGuard('FAMILY')] },
   { path: 'driver/dashboard', component: DriverDashboard, canActivate: [authGuard, roleGuard('DRIVER')] },

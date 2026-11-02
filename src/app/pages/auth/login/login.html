@@ -72,17 +72,6 @@
       </form>
 
       <p class="auth-switch">¿Primera vez? <a routerLink="/register">Crear cuenta</a></p>
-      <p class="role-notice">Tu rol define las pantallas a las que puedes entrar. Si no tienes acceso a alguna, contacta al coordinador.</p>
-
-      <details class="demo-access">
-        <summary>Ver cuentas de demostración</summary>
-        <p>Contraseña para todas: <strong>{{ demoPassword }}</strong></p>
-        <div class="demo-grid">
-          @for (option of roles; track option.role) {
-            <button type="button" (click)="useDemo(option)"><span>{{ option.label }}</span><small>{{ option.email }}</small></button>
-          }
-        </div>
-      </details>
     </section>
   </main>
 </div>

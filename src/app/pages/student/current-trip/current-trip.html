@@ -1,0 +1,78 @@
+<div class="current-trip-page">
+  <header class="page-heading">
+    <div><p class="eyebrow">US03 + US04 · Seguimiento</p><h1>Mi viaje actual</h1><p>Consulta el estado, la última ubicación reportada y los tiempos estimados de llegada.</p></div>
+    <button type="button" class="refresh-button" (click)="refresh()" [disabled]="loading() || refreshing()">
+      @if (refreshing()) { <mat-spinner diameter="19" /> } @else { <mat-icon>refresh</mat-icon> }
+      Actualizar
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert error" role="alert"><mat-icon>error</mat-icon><span>{{ errorMessage() }}</span><button type="button" (click)="refresh()">Reintentar</button></div>
+  }
+
+  @if (loading()) {
+    <section class="state-card loading-state" aria-live="polite"><mat-spinner diameter="42" /><h2>Consultando tu viaje…</h2><p>Estamos obteniendo la información operativa más reciente.</p></section>
+  } @else if (!response()?.available || !trip()) {
+    <section class="state-card empty-state"><span class="state-icon"><mat-icon>directions_bus</mat-icon></span><h2>No tienes un viaje actual</h2><p>{{ response()?.message || 'No hay un viaje activo o programado para tu inscripción.' }}</p></section>
+  } @else if (trip(); as current) {
+    <section class="trip-hero">
+      <div class="trip-title"><span class="route-code">{{ current.routeCode }}</span><h2>{{ current.routeName }}</h2><p>Viaje #{{ current.tripId }}</p></div>
+      <span class="status-badge" [class]="'status-badge ' + current.tripStatus.toLowerCase()"><span></span>{{ statusLabel(current.tripStatus) }}</span>
+    </section>
+
+    <section class="overview-grid">
+      <article class="info-card schedule-card">
+        <div class="card-heading"><span class="card-icon"><mat-icon>schedule</mat-icon></span><div><p>Horario del viaje</p><h3>{{ current.scheduledStartAt ? (current.scheduledStartAt | date:'shortTime') : 'Sin hora' }} – {{ current.scheduledEndAt ? (current.scheduledEndAt | date:'shortTime') : 'Sin hora' }}</h3></div></div>
+        <div class="detail-row"><span>Inicio programado</span><strong>{{ current.scheduledStartAt ? (current.scheduledStartAt | date:'medium') : 'No disponible' }}</strong></div>
+        @if (current.actualStartAt) { <div class="detail-row"><span>Inicio real</span><strong>{{ current.actualStartAt | date:'medium' }}</strong></div> }
+      </article>
+
+      <article class="info-card stop-card">
+        <div class="card-heading"><span class="card-icon teal"><mat-icon>where_to_vote</mat-icon></span><div><p>Tu paradero asignado</p><h3>{{ current.assignedStop?.name || 'No asignado' }}</h3></div></div>
+        @if (current.assignedStop) { <p class="muted">{{ current.assignedStop.address || 'Dirección no registrada' }}@if (current.assignedStop.district) { · {{ current.assignedStop.district }} }</p> }
+      </article>
+    </section>
+
+    <section class="tracking-grid">
+      <article class="info-card location-card">
+        <div class="section-title"><div><p class="eyebrow">Ubicación</p><h2>Posición del vehículo</h2></div>
+          @if (current.location) { <span class="freshness" [class.stale]="current.location.stale">{{ freshnessLabel(current.location.freshness) }}</span> }
+        </div>
+        @if (current.location?.available && current.location?.latitude != null && current.location?.longitude != null) {
+          <div class="location-visual" aria-label="Representación de la ubicación reportada"><div class="route-line"></div><span class="map-pin"><mat-icon>directions_bus</mat-icon></span><span class="pulse"></span></div>
+          <div class="coordinates"><span><small>Latitud</small><strong>{{ current.location!.latitude | number:'1.5-6' }}</strong></span><span><small>Longitud</small><strong>{{ current.location!.longitude | number:'1.5-6' }}</strong></span></div>
+          <p class="update-note"><mat-icon>update</mat-icon>Reportada {{ current.location!.recordedAt ? (current.location!.recordedAt | date:'medium') : 'sin hora registrada' }}</p>
+        } @else {
+          <div class="unavailable"><mat-icon>location_off</mat-icon><h3>Ubicación no disponible</h3><p>{{ current.location?.message || 'El vehículo todavía no reportó una posición.' }}</p></div>
+        }
+      </article>
+
+      <div class="eta-stack">
+        <article class="eta-card primary-eta">
+          <p>Llegada estimada a tu paradero</p>
+          @if (current.stopArrival?.available) {
+            <strong>{{ current.stopArrival!.estimatedArrivalAt | date:'shortTime' }}</strong>
+            <span>{{ current.stopArrival!.remainingMinutes != null ? current.stopArrival!.remainingMinutes + ' min restantes' : 'Tiempo restante no disponible' }}</span>
+          } @else { <strong class="unavailable-value">—</strong><span>{{ current.stopArrival?.message || 'ETA no disponible' }}</span> }
+        </article>
+        <article class="eta-card">
+          <p>Llegada estimada al campus</p>
+          @if (current.universityArrival?.available) {
+            <strong>{{ current.universityArrival!.estimatedArrivalAt | date:'shortTime' }}</strong>
+            <span>{{ current.universityArrival!.remainingMinutes != null ? current.universityArrival!.remainingMinutes + ' min restantes' : 'Tiempo restante no disponible' }}</span>
+            @if (current.universityArrival!.delayed) { <em><mat-icon>warning</mat-icon>Demora de {{ current.universityArrival!.delayMinutes }} min</em> }
+            <small>{{ etaSourceLabel(current.universityArrival!.source) }}</small>
+          } @else { <strong class="unavailable-value">—</strong><span>{{ current.universityArrival?.message || 'ETA no disponible' }}</span> }
+        </article>
+      </div>
+    </section>
+
+    <section class="assignment-grid">
+      <article class="assignment-card"><span class="assignment-icon"><mat-icon>directions_bus</mat-icon></span><div><small>Vehículo asignado</small>@if (current.vehicle) { <h3>{{ current.vehicle.plate }}</h3><p>{{ current.vehicle.brand || 'Marca no registrada' }} {{ current.vehicle.model || '' }}</p> } @else { <h3>Sin vehículo</h3><p>Aún no se asignó una unidad.</p> }</div></article>
+      <article class="assignment-card"><span class="assignment-icon driver"><mat-icon>badge</mat-icon></span><div><small>Conductor asignado</small>@if (current.driver?.assigned) { <h3>{{ current.driver!.fullName }}</h3><p>Licencia {{ current.driver!.licenseNumber || 'no registrada' }} · {{ current.driver!.authorized ? 'Autorizado' : 'Pendiente de autorización' }}</p> } @else { <h3>Sin conductor</h3><p>{{ current.driver?.message || 'Aún no se asignó un conductor.' }}</p> }</div></article>
+    </section>
+
+    <p class="polling-note"><mat-icon>sync</mat-icon>La información se actualiza automáticamente cada 8 segundos.</p>
+  }
+</div>

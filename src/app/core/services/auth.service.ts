@@ -17,8 +17,6 @@ const TOKEN_KEY = 'wayrapass.auth.token';
 const USER_KEY = 'wayrapass.auth.user';
 const STUDENT_INSTITUTION_PREFIX = 'wayrapass.student.institution.';
 
-export const DEMO_PASSWORD = 'WayraDemo123!';
-
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);

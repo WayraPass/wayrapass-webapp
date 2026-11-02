@@ -1,19 +1,9 @@
 <div class="student-routes-page">
-  <header class="student-header">
-    <a class="brand" routerLink="/student/dashboard" aria-label="WayraPass, inicio del estudiante">
-      <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
-    </a>
-    <div class="user-actions">
-      <span class="role-chip">Estudiante</span>
-      <button type="button" class="logout-button" (click)="logout()"><mat-icon>logout</mat-icon>Cerrar sesión</button>
-    </div>
-  </header>
-
   <main class="routes-main">
     <nav class="breadcrumb"><a routerLink="/student/dashboard">Inicio</a><mat-icon>chevron_right</mat-icon><span>Buscar rutas</span></nav>
 
     <section class="page-heading">
-      <div><p class="eyebrow">US02 · Rutas disponibles</p><h1>Buscar y guardar rutas</h1><p>Elige tu campus, punto de partida y horario de recojo.</p></div>
+      <div><p class="eyebrow">US02 · Rutas disponibles</p><h1>Buscar y guardar rutas</h1><p>Elige tu campus, distrito y paradero de recojo.</p></div>
       <div class="student-name"><span>Sesión de</span><strong>{{ user()?.fullName }}</strong></div>
     </section>
 
@@ -96,7 +86,7 @@
               </details>
             </article>
           } @empty {
-            <div class="empty-results"><mat-icon>route</mat-icon><h3>No encontramos rutas disponibles</h3><p>Prueba cambiando el campus, distrito, paradero u hora de recojo.</p></div>
+            <div class="empty-results"><mat-icon>route</mat-icon><h3>No encontramos rutas disponibles</h3><p>Prueba cambiando el campus, distrito o paradero.</p></div>
           }
         </div>
       }
