@@ -84,6 +84,7 @@
                   } @empty { <p>No hay horarios activos para esta ruta.</p> }
                 </div>
               </details>
+              <a class="enrollment-action" routerLink="/student/enrollment" [queryParams]="{ routeId: route.routeId }"><mat-icon>assignment_turned_in</mat-icon>Inscribirme en esta ruta</a>
             </article>
           } @empty {
             <div class="empty-results"><mat-icon>route</mat-icon><h3>No encontramos rutas disponibles</h3><p>Prueba cambiando el campus, distrito o paradero.</p></div>

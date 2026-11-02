@@ -1,0 +1,48 @@
+<div class="enrollment-page">
+  <header class="page-heading"><p class="eyebrow">Inscripción estudiantil</p><h1>Mi inscripción</h1><p>Gestiona la ruta y el paradero asociados a tus traslados.</p></header>
+
+  @if (errorMessage()) { <div class="alert error" role="alert"><mat-icon>error</mat-icon><span>{{ errorMessage() }}</span><button type="button" (click)="load()">Reintentar</button></div> }
+  @if (successMessage()) { <div class="alert success" role="status"><mat-icon>check_circle</mat-icon><span>{{ successMessage() }}</span></div> }
+
+  @if (loading()) {
+    <section class="state-card"><mat-spinner diameter="42" /><h2>Cargando inscripción…</h2></section>
+  } @else {
+    @if (current(); as enrollment) {
+      <section class="current-card">
+        <header><div><p class="eyebrow">Inscripción actual</p><h2>{{ currentRoute()?.routeName || 'Ruta no disponible' }}</h2></div><span class="status" [class.suspended]="enrollment.status === 'SUSPENDED'">{{ statusLabel(enrollment.status) }}</span></header>
+        <p class="route-path">{{ currentRoute()?.origin }} <span>→</span> {{ currentRoute()?.destination }}</p>
+        <div class="current-details"><div><mat-icon>where_to_vote</mat-icon><span><small>Paradero</small><strong>{{ currentStop()?.name || 'Paradero no disponible' }}</strong></span></div><div><mat-icon>school</mat-icon><span><small>Campus</small><strong>{{ currentRoute()?.institution?.displayName || 'Campus no disponible' }}</strong></span></div></div>
+        @if (enrollment.status === 'SUSPENDED') {
+          <div class="suspension-summary"><mat-icon>pause_circle</mat-icon><div><strong>Inscripción suspendida</strong><p>Desde el {{ dateLabel(enrollment.suspendedFrom) }} hasta el {{ dateLabel(enrollment.suspendedUntil) }}.</p></div></div>
+          <button type="button" class="primary-button" (click)="reactivate()" [disabled]="saving()">@if (saving()) { <mat-spinner diameter="19" /> } @else { <mat-icon>play_circle</mat-icon> }Reactivar inscripción</button>
+        } @else if (!editing()) {
+          <div class="current-actions"><button type="button" class="primary-button" (click)="startChange()"><mat-icon>edit_route</mat-icon>Cambiar ruta o paradero</button><button type="button" class="secondary-button suspension-button" (click)="openSuspension()"><mat-icon>pause_circle</mat-icon>Suspender temporalmente</button></div>
+        }
+      </section>
+
+      @if (suspensionOpen() && enrollment.status === 'ACTIVE') {
+        <section class="suspension-panel" aria-labelledby="suspension-title">
+          <header><div><p class="eyebrow">Pausa temporal</p><h2 id="suspension-title">Suspender inscripción</h2></div><button type="button" class="icon-button" (click)="closeSuspension()" aria-label="Cerrar"><mat-icon>close</mat-icon></button></header>
+          <p>Durante este período no se mostrarán viajes programados para tu inscripción. La suspensión debe comenzar hoy.</p>
+          <form [formGroup]="suspensionForm" (ngSubmit)="suspend()">
+            <div class="date-grid"><label><span>Fecha de inicio</span><input type="date" formControlName="startDate" [min]="today" [max]="today" readonly /></label><label><span>Fecha de reactivación prevista</span><input type="date" formControlName="endDate" [min]="today" /></label></div>
+            <div class="confirmation-note"><mat-icon>info</mat-icon><span>Confirma que deseas pausar temporalmente tu inscripción actual.</span></div>
+            <div class="form-actions"><button type="button" class="secondary-button" (click)="closeSuspension()" [disabled]="saving()">Cancelar</button><button type="submit" class="primary-button" [disabled]="saving() || suspensionForm.invalid">@if (saving()) { <mat-spinner diameter="19" /> } @else { <mat-icon>pause</mat-icon> }Confirmar suspensión</button></div>
+          </form>
+        </section>
+      }
+    } @else {
+      <section class="empty-card"><span><mat-icon>route</mat-icon></span><div><h2>Todavía no tienes una inscripción activa</h2><p>Elige una ruta disponible y confirma tu paradero habitual.</p></div><a routerLink="/student/routes"><mat-icon>search</mat-icon>Buscar una ruta</a></section>
+    }
+
+    @if (editing()) {
+      <section class="editor-card"><header><p class="eyebrow">{{ current() ? 'Cambiar inscripción' : 'Nueva inscripción' }}</p><h2>{{ current() ? 'Selecciona la nueva asignación' : 'Selecciona tu ruta y paradero' }}</h2></header><form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="selection-grid"><label><span>Ruta</span><select formControlName="routeId"><option [ngValue]="0">Selecciona una ruta</option>@for (route of routes(); track route.routeId) { <option [ngValue]="route.routeId">{{ route.routeCode }} · {{ route.routeName }}</option> }</select></label><label><span>Paradero</span><select formControlName="stopId" [disabled]="!selectedRoute()"><option [ngValue]="0">{{ selectedRoute() ? 'Selecciona un paradero' : 'Elige primero una ruta' }}</option>@for (stop of selectedRoute()?.stops || []; track stop.id) { <option [ngValue]="stop.id">{{ stopLabel(stop, selectedRoute()!) }}</option> }</select></label></div>
+
+        @if (selectedRoute(); as route) { <section class="selection-summary"><h3>{{ current() ? 'Comparación del cambio' : 'Confirma tu inscripción' }}</h3>@if (current()) { <div class="comparison"><article><small>Actual</small><strong>{{ currentRoute()?.routeName }}</strong><span>{{ currentStop()?.name }}</span></article><mat-icon>arrow_forward</mat-icon><article><small>Nuevo</small><strong>{{ route.routeName }}</strong><span>{{ selectedStop()?.name || 'Selecciona un paradero' }}</span></article></div> } @else { <dl><div><dt>Ruta</dt><dd>{{ route.origin }} → {{ route.destination }}</dd></div><div><dt>Campus</dt><dd>{{ route.institution.displayName }}</dd></div><div><dt>Paradero</dt><dd>{{ selectedStop()?.name || 'Selecciona un paradero' }}</dd></div></dl> }</section> }
+
+        <div class="form-actions">@if (current()) { <button type="button" class="secondary-button" (click)="cancelChange()" [disabled]="saving()">Cancelar</button> }<button type="submit" class="primary-button" [disabled]="saving() || !selectedRoute() || !selectedStop()">@if (saving()) { <mat-spinner diameter="19" /> } @else { <mat-icon>check</mat-icon> }{{ current() ? 'Confirmar cambio' : 'Confirmar inscripción' }}</button></div>
+      </form></section>
+    }
+  }
+</div>

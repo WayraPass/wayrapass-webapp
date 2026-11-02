@@ -6,7 +6,6 @@ import { Register } from './pages/auth/register/register';
 import { ResetPassword } from './pages/auth/reset-password/reset-password';
 import { CoordinatorDashboard } from './pages/coordinator/dashboard/dashboard';
 import { DriverDashboard } from './pages/driver/dashboard/dashboard';
-import { FamilyDashboard } from './pages/family/dashboard/dashboard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -22,11 +21,23 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', loadComponent: () => import('./pages/student/dashboard/dashboard').then((m) => m.StudentDashboard), title: 'Inicio · WayraPass' },
       { path: 'routes', loadComponent: () => import('./pages/student/route-search/route-search').then((m) => m.StudentRouteSearch), title: 'Buscar rutas · WayraPass' },
+      { path: 'enrollment', loadComponent: () => import('./pages/student/enrollment/enrollment').then((m) => m.StudentEnrollment), title: 'Mi inscripción · WayraPass' },
+      { path: 'upcoming-trips', loadComponent: () => import('./pages/student/upcoming-trips/upcoming-trips').then((m) => m.UpcomingTrips), title: 'Próximos viajes · WayraPass' },
       { path: 'current-trip', loadComponent: () => import('./pages/student/current-trip/current-trip').then((m) => m.CurrentTrip), title: 'Mi viaje actual · WayraPass' },
       { path: 'history', loadComponent: () => import('./pages/trip-history/trip-history').then((m) => m.TripHistory), title: 'Mi historial · WayraPass' },
     ],
   },
-  { path: 'family/dashboard', component: FamilyDashboard, canActivate: [authGuard, roleGuard('FAMILY')] },
+  {
+    path: 'family',
+    loadComponent: () => import('./pages/family/layout/family-layout').then((m) => m.FamilyLayout),
+    canActivate: [authGuard, roleGuard('FAMILY')],
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', loadComponent: () => import('./pages/family/dashboard/dashboard').then((m) => m.FamilyDashboard), title: 'Inicio familiar · WayraPass' },
+      { path: 'tracking', loadComponent: () => import('./pages/family/tracking/family-tracking').then((m) => m.FamilyTracking), title: 'Seguimiento familiar · WayraPass' },
+      { path: 'history', loadComponent: () => import('./pages/trip-history/trip-history').then((m) => m.TripHistory), data: { familyMode: true }, title: 'Historial familiar · WayraPass' },
+    ],
+  },
   { path: 'driver/dashboard', component: DriverDashboard, canActivate: [authGuard, roleGuard('DRIVER')] },
   { path: 'coordinator/dashboard', component: CoordinatorDashboard, canActivate: [authGuard, roleGuard('COORDINATOR')] },
   {
