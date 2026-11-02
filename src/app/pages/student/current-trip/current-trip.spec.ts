@@ -22,6 +22,7 @@ const availableTrip: CurrentTripResponse = {
     actualEndAt: null,
     vehicle: { vehicleId: 1, plate: 'WP-D01', brand: 'Mercedes-Benz', model: 'Sprinter' },
     assignedStop: { stopId: 1, name: 'Paradero Central', address: 'Av. Principal 100', district: 'San Juan de Miraflores' },
+    boarding: { confirmed: false, boardedAt: null, stopName: null },
     location: { available: true, stale: false, freshness: 'RECENT', latitude: -12.12, longitude: -77.01, recordedAt: '2026-11-02T12:10:00Z', message: 'Ubicación reciente.' },
     stopArrival: { available: true, scheduledArrivalAt: '2026-11-02T12:20:00Z', estimatedArrivalAt: '2026-11-02T12:24:00Z', remainingMinutes: 14, updatedAt: '2026-11-02T12:10:00Z', message: 'ETA disponible.' },
     universityArrival: { available: true, scheduledArrivalAt: '2026-11-02T13:00:00Z', estimatedArrivalAt: '2026-11-02T13:05:00Z', remainingMinutes: 55, delayed: true, delayMinutes: 5, updatedAt: '2026-11-02T12:10:00Z', source: 'OPERATIONAL', message: 'ETA operativo.' },
@@ -84,6 +85,102 @@ describe('CurrentTrip US03/US04', () => {
     expect(text).toContain('Llegada estimada a tu paradero');
     expect(text).toContain('14 min restantes');
     expect(text).toContain('WP-D01');
+    expect(text).not.toContain('US05');
+    expect(text).not.toContain('Viaje #4');
+  });
+
+  it('simulates the demo QR reading and submits the real boarding contract', () => {
+    fixture = TestBed.createComponent(CurrentTrip);
+    fixture.detectChanges();
+    vi.advanceTimersByTime(0);
+    const component = fixture.componentInstance;
+
+    component.openBoarding();
+    component.simulateQrReading();
+    expect(component.boardingCode()).toBe('WP-DEMO-QR-VEHICLE-001');
+    component.confirmBoarding();
+    fixture.detectChanges();
+
+    expect(boardings.request).toEqual({ tripId: 4, stopId: 1, vehicleQrToken: 'WP-DEMO-QR-VEHICLE-001' });
+    expect(component.boardingCode()).toBe('');
+    expect(component.boardingPanelOpen()).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Abordaje confirmado correctamente.');
+  });
+
+  it('reconstructs a confirmed boarding from the current-trip response', () => {
+    service.response = {
+      ...availableTrip,
+      trip: {
+        ...availableTrip.trip!,
+        boarding: { confirmed: true, boardedAt: '2026-11-02T12:20:00Z', stopName: 'Paradero Central' },
+      },
+    };
+    fixture = TestBed.createComponent(CurrentTrip);
+    fixture.detectChanges();
+    vi.advanceTimersByTime(0);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const confirmation = element.querySelector('.boarding-copy small')?.textContent ?? '';
+    expect(element.textContent).toContain('Abordaje confirmado correctamente.');
+    expect(element.textContent).not.toContain('Validar vehículo');
+    expect(confirmation).toContain('Registrado');
+    expect(confirmation).toContain('Paradero Central');
+  });
+
+  it('reconstructs the same confirmed state in a new component after a successful post', () => {
+    fixture = TestBed.createComponent(CurrentTrip);
+    fixture.detectChanges();
+    vi.advanceTimersByTime(0);
+    fixture.componentInstance.openBoarding();
+    fixture.componentInstance.simulateQrReading();
+    fixture.componentInstance.confirmBoarding();
+    fixture.destroy();
+
+    service.response = {
+      ...availableTrip,
+      trip: {
+        ...availableTrip.trip!,
+        boarding: { confirmed: true, boardedAt: '2026-11-02T12:20:00Z', stopName: 'Paradero Central' },
+      },
+    };
+    fixture = TestBed.createComponent(CurrentTrip);
+    fixture.detectChanges();
+    vi.advanceTimersByTime(0);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Abordaje confirmado correctamente.');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Validar vehículo');
+  });
+
+  it('does not lose a successful boarding when polling refreshes the trip', () => {
+    fixture = TestBed.createComponent(CurrentTrip);
+    fixture.detectChanges();
+    vi.advanceTimersByTime(0);
+    fixture.componentInstance.openBoarding();
+    fixture.componentInstance.simulateQrReading();
+    fixture.componentInstance.confirmBoarding();
+
+    vi.advanceTimersByTime(CURRENT_TRIP_POLL_MS);
+    fixture.detectChanges();
+
+    expect(service.calls).toBe(2);
+    expect(fixture.componentInstance.boardingConfirmed()).toBe(true);
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Validar vehículo');
+  });
+
+  it('clears the temporary code when the validation panel is closed', () => {
+    fixture = TestBed.createComponent(CurrentTrip);
+    fixture.detectChanges();
+    vi.advanceTimersByTime(0);
+    const component = fixture.componentInstance;
+    component.openBoarding();
+    component.simulateQrReading();
+
+    component.closeBoarding();
+
+    expect(component.boardingCode()).toBe('');
+    expect(component.boardingPanelOpen()).toBe(false);
   });
 
   it('shows the explicit empty state when the student has no current trip', () => {
@@ -124,7 +221,8 @@ describe('CurrentTrip US03/US04', () => {
     fixture.detectChanges();
 
     expect(component.boardingRegistered()).toBe(true);
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Tu abordaje ya había sido registrado.');
+    expect(component.boardingCode()).toBe('');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Tu abordaje ya fue registrado.');
   });
 
   it('shows the backend validation when the QR code is invalid', () => {
@@ -142,7 +240,8 @@ describe('CurrentTrip US03/US04', () => {
     fixture.detectChanges();
 
     expect(component.boardingRegistered()).toBe(false);
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('El QR no corresponde al vehículo asignado.');
+    expect(component.boardingCode()).toBe('QR-INCORRECTO');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('El código del vehículo no corresponde a este viaje.');
   });
 
   it('does not show the boarding action for a non-operational trip', () => {
@@ -156,7 +255,7 @@ describe('CurrentTrip US03/US04', () => {
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).not.toContain('Escanear QR del vehículo');
+    expect(text).not.toContain('Validar vehículo');
     expect(text).toContain('El abordaje todavía no está disponible');
   });
 });

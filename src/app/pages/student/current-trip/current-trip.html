@@ -1,6 +1,6 @@
 <div class="current-trip-page">
   <header class="page-heading">
-    <div><p class="eyebrow">US03 + US04 · Seguimiento</p><h1>Mi viaje actual</h1><p>Consulta el estado, la última ubicación reportada y los tiempos estimados de llegada.</p></div>
+    <div><p class="eyebrow">Seguimiento en tiempo real</p><h1>Mi viaje actual</h1><p>Consulta el estado, la última ubicación reportada y los tiempos estimados de llegada.</p></div>
     <button type="button" class="refresh-button" (click)="refresh()" [disabled]="loading() || refreshing()">
       @if (refreshing()) { <mat-spinner diameter="19" /> } @else { <mat-icon>refresh</mat-icon> }
       Actualizar
@@ -17,7 +17,7 @@
     <section class="state-card empty-state"><span class="state-icon"><mat-icon>directions_bus</mat-icon></span><h2>No tienes un viaje actual</h2><p>{{ response()?.message || 'No hay un viaje activo o programado para tu inscripción.' }}</p></section>
   } @else if (trip(); as current) {
     <section class="trip-hero">
-      <div class="trip-title"><span class="route-code">{{ current.routeCode }}</span><h2>{{ current.routeName }}</h2><p>Viaje #{{ current.tripId }}</p></div>
+      <div class="trip-title"><span class="route-code">{{ current.routeCode }}</span><h2>{{ current.routeName }}</h2><p>Viaje asignado</p></div>
       <span class="status-badge" [class]="'status-badge ' + current.tripStatus.toLowerCase()"><span></span>{{ statusLabel(current.tripStatus) }}</span>
     </section>
 
@@ -37,14 +37,13 @@
     <section class="boarding-card" aria-labelledby="boarding-title">
       <span class="boarding-icon"><mat-icon>qr_code_scanner</mat-icon></span>
       <div class="boarding-copy">
-        <p class="eyebrow">US05 · Abordaje</p>
         <h2 id="boarding-title">Confirmar abordaje</h2>
-        @if (boardingRegistered()) {
-          <p class="boarding-success"><mat-icon>check_circle</mat-icon>{{ boardingResult() ? 'Abordaje confirmado correctamente.' : boardingError() }}</p>
-          @if (boardingResult(); as registered) { <small>Registrado {{ registered.boardedAt | date:'medium' }} en {{ current.assignedStop?.name }}.</small> }
+        @if (boardingConfirmed()) {
+          <p class="boarding-success"><mat-icon>check_circle</mat-icon>{{ boardingError() || 'Abordaje confirmado correctamente.' }}</p>
+          @if (boardingDetails(); as registered) { <small>Registrado {{ registered.boardedAt ? (registered.boardedAt | date:'medium') : 'anteriormente' }}@if (registered.stopName) { en {{ registered.stopName }} }.</small> }
         } @else if (canBoard()) {
-          <p>Valida el código QR colocado en el vehículo <strong>{{ current.vehicle?.plate }}</strong>. WayraPass usará automáticamente este viaje y tu paradero asignado.</p>
-          <button type="button" class="boarding-action" (click)="openBoarding()"><mat-icon>qr_code_scanner</mat-icon>Escanear QR del vehículo</button>
+          <p>Valida que estás subiendo al vehículo asignado para este viaje.</p>
+          <button type="button" class="boarding-action" (click)="openBoarding()"><mat-icon>verified</mat-icon>Validar vehículo</button>
         } @else {
           <p class="boarding-unavailable">El abordaje todavía no está disponible para este viaje.</p>
         }
@@ -52,13 +51,13 @@
     </section>
 
     @if (boardingPanelOpen()) {
-      <section class="boarding-panel" aria-label="Validar código QR del vehículo">
-        <div class="panel-heading"><div><p class="eyebrow">Validación segura</p><h2>Código del QR</h2></div><button type="button" class="close-button" (click)="closeBoarding()" aria-label="Cerrar"><mat-icon>close</mat-icon></button></div>
-        <p>Esta versión web permite ingresar el código leído del QR. El código se mantiene únicamente durante esta validación.</p>
-        <label for="boarding-code">Código de abordaje</label>
-        <div class="boarding-input"><mat-icon>qr_code_2</mat-icon><input id="boarding-code" type="password" autocomplete="off" [ngModel]="boardingCode()" (ngModelChange)="boardingCode.set($event)" placeholder="Ingresa el código leído" /></div>
+      <section class="boarding-panel" role="dialog" aria-modal="true" aria-labelledby="qr-simulation-title">
+        <div class="panel-heading"><div><p class="eyebrow">Validación del vehículo</p><h2 id="qr-simulation-title">Simulación de lectura QR</h2></div><button type="button" class="close-button" (click)="closeBoarding()" aria-label="Cerrar"><mat-icon>close</mat-icon></button></div>
+        <p>En la aplicación móvil este código se obtiene al escanear el QR físico del vehículo. En este entorno de demostración puedes simular la lectura.</p>
+        <label for="boarding-code">Código leído del vehículo</label>
+        <div class="boarding-input"><mat-icon>qr_code_2</mat-icon><input id="boarding-code" type="text" autocomplete="off" [ngModel]="boardingCode()" (ngModelChange)="boardingCode.set($event)" placeholder="Ingresa o simula el código leído" /></div>
         @if (boardingError()) { <p class="boarding-error" role="alert">{{ boardingError() }}</p> }
-        <div class="boarding-buttons"><button type="button" class="secondary-action" (click)="closeBoarding()" [disabled]="boardingLoading()">Cancelar</button><button type="button" class="boarding-action" (click)="confirmBoarding()" [disabled]="boardingLoading()">@if (boardingLoading()) { <mat-spinner diameter="19" /> } @else { <mat-icon>check</mat-icon> }Confirmar abordaje</button></div>
+        <div class="boarding-buttons"><button type="button" class="secondary-action" (click)="closeBoarding()" [disabled]="boardingLoading()">Cancelar</button><button type="button" class="secondary-action" (click)="simulateQrReading()" [disabled]="boardingLoading()"><mat-icon>qr_code_scanner</mat-icon>Simular lectura del QR</button><button type="button" class="boarding-action" (click)="confirmBoarding()" [disabled]="boardingLoading()">@if (boardingLoading()) { <mat-spinner diameter="19" /> } @else { <mat-icon>check</mat-icon> }Confirmar abordaje</button></div>
       </section>
     }
 

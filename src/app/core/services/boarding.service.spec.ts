@@ -19,7 +19,7 @@ describe('BoardingService US05', () => {
   afterEach(() => http.verify());
 
   it('posts the real trip, stop and QR-token contract', () => {
-    const body = { tripId: 4, stopId: 118, vehicleQrToken: 'QR-WP-D01' };
+    const body = { tripId: 4, stopId: 118, vehicleQrToken: 'WP-DEMO-QR-VEHICLE-001' };
     service.confirm(body).subscribe((response) => expect(response.tripId).toBe(4));
 
     const request = http.expectOne(`${environment.apiUrl}/boardings`);

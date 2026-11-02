@@ -20,8 +20,14 @@ export function boardingErrorMessage(error: unknown): string {
     if (error.status === 401) return 'Tu sesión venció. Vuelve a iniciar sesión para confirmar el abordaje.';
     if (error.status === 403) return 'Tu cuenta no tiene permiso para confirmar este abordaje.';
     if (error.status === 404) return apiMessage(error) ?? 'El viaje o paradero ya no está disponible.';
-    if (error.status === 409) return 'Tu abordaje ya había sido registrado.';
-    if (error.status === 400) return apiMessage(error) ?? 'El código QR no es válido para este viaje.';
+    if (error.status === 409) return 'Tu abordaje ya fue registrado.';
+    if (error.status === 400) {
+      const message = apiMessage(error);
+      if (message?.toLocaleLowerCase('es').includes('qr')) {
+        return 'El código del vehículo no corresponde a este viaje.';
+      }
+      return message ?? 'El código del vehículo no corresponde a este viaje.';
+    }
     return apiMessage(error) ?? `No se pudo confirmar el abordaje (error ${error.status}).`;
   }
   return 'No se pudo confirmar el abordaje. Inténtalo nuevamente.';

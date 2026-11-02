@@ -9,6 +9,7 @@ import { Subject, catchError, exhaustMap, map, merge, of, tap, timer } from 'rxj
 import { BoardingResponse, CurrentTripResponse, TripStatus } from '../../../core/models/trip.models';
 import { BoardingService, boardingErrorMessage } from '../../../core/services/boarding.service';
 import { TripService, tripErrorMessage } from '../../../core/services/trip.service';
+import { environment } from '../../../../environments/environment';
 
 export const CURRENT_TRIP_POLL_MS = 8_000;
 
@@ -42,6 +43,16 @@ export class CurrentTrip {
   readonly boardingError = signal('');
   readonly boardingResult = signal<BoardingResponse | null>(null);
   readonly boardingRegistered = signal(false);
+  readonly boardingConfirmed = computed(() => this.boardingRegistered() || this.trip()?.boarding?.confirmed === true);
+  readonly boardingDetails = computed(() => {
+    const persisted = this.trip()?.boarding;
+    if (persisted?.confirmed) {
+      return { boardedAt: persisted.boardedAt, stopName: persisted.stopName };
+    }
+    const result = this.boardingResult();
+    if (!result) return null;
+    return { boardedAt: result.boardedAt, stopName: this.trip()?.assignedStop?.name ?? null };
+  });
   readonly canBoard = computed(() => {
     const trip = this.trip();
     return Boolean(
@@ -49,7 +60,7 @@ export class CurrentTrip {
       && (trip.tripStatus === 'BOARDING' || trip.tripStatus === 'IN_PROGRESS')
       && trip.assignedStop
       && trip.vehicle
-      && !this.boardingRegistered()
+      && !this.boardingConfirmed()
     );
   });
 
@@ -98,6 +109,12 @@ export class CurrentTrip {
     this.boardingPanelOpen.set(false);
   }
 
+  simulateQrReading(): void {
+    if (!this.boardingPanelOpen()) return;
+    this.boardingCode.set(environment.demoVehicleQrToken);
+    this.boardingError.set('');
+  }
+
   confirmBoarding(): void {
     const trip = this.trip();
     const code = this.boardingCode().trim();
@@ -109,17 +126,18 @@ export class CurrentTrip {
 
     this.boardingLoading.set(true);
     this.boardingError.set('');
-    this.boardingCode.set('');
     this.boardings.confirm({ tripId: trip.tripId, stopId: trip.assignedStop.stopId, vehicleQrToken: code }).subscribe({
       next: (result) => {
         this.boardingResult.set(result);
         this.boardingRegistered.set(true);
+        this.boardingCode.set('');
         this.boardingPanelOpen.set(false);
         this.boardingLoading.set(false);
       },
       error: (error: unknown) => {
         if (error instanceof HttpErrorResponse && error.status === 409) {
           this.boardingRegistered.set(true);
+          this.boardingCode.set('');
           this.boardingPanelOpen.set(false);
         }
         this.boardingError.set(boardingErrorMessage(error));
