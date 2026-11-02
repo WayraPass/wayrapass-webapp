@@ -1,8 +1,7 @@
 <div class="dashboard-page">
   <header class="dashboard-header">
     <a class="brand dashboard-brand" href="/" aria-label="WayraPass">
-      <span class="brand-mark" aria-hidden="true">W</span>
-      <span class="brand-word">WAYRA<span>PASS</span></span>
+      <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
     </a>
     <div class="user-actions"><span class="role-chip">{{ roleName() }}</span><button mat-stroked-button type="button" (click)="logout()"><mat-icon>logout</mat-icon>Cerrar sesión</button></div>
   </header>
@@ -14,6 +13,6 @@
       <p>{{ description() }}</p>
       <div class="account-summary"><div><span>Correo</span><strong>{{ user()?.email }}</strong></div><div><span>Rol verificado</span><strong>{{ roleName() }}</strong></div></div>
     </section>
-    <section class="scope-card"><mat-icon>construction</mat-icon><div><h2>Dashboard de demostración</h2><p>Esta pantalla confirma que el inicio de sesión identificó el rol y aplicó la ruta correcta. Las funciones operativas se desarrollarán en otras User Stories.</p></div></section>
+    <section class="scope-card"><mat-icon>verified_user</mat-icon><div><h2>Sesión verificada</h2><p>Esta pantalla confirma que el backend autenticó la cuenta, validó el JWT y aplicó la ruta correspondiente al rol real.</p></div></section>
   </main>
 </div>

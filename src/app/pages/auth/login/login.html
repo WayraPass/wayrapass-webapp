@@ -1,8 +1,7 @@
 <div class="auth-page login-page">
   <aside class="auth-brand-panel" aria-label="Perfiles de WayraPass">
     <a class="brand" routerLink="/login" aria-label="WayraPass, inicio">
-      <span class="brand-mark" aria-hidden="true">W</span>
-      <span class="brand-word">WAYRA<span>PASS</span></span>
+      <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
     </a>
 
     <div class="brand-copy">
@@ -25,8 +24,7 @@
   <main class="auth-form-panel">
     <section class="auth-card" aria-labelledby="login-title">
       <div class="brand mobile-wordmark">
-        <span class="brand-mark" aria-hidden="true">W</span>
-        <span class="brand-word">WAYRA<span>PASS</span></span>
+        <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
       </div>
       <header class="form-heading">
         <h2 id="login-title">Iniciar sesión</h2>
@@ -47,12 +45,6 @@
 
       @if (successMessage()) { <div class="form-alert success" role="status">{{ successMessage() }}</div> }
       @if (errorMessage()) { <div class="form-alert error" role="alert">{{ errorMessage() }}</div> }
-      @if (auth.isBlocked()) {
-        <div class="form-alert blocked" role="alert">
-          <mat-icon>lock_clock</mat-icon>
-          <span><strong>Acceso bloqueado</strong>Vuelve a intentarlo en {{ blockCountdown() }}.</span>
-        </div>
-      }
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <label class="field-label" for="login-email">Correo</label>
@@ -74,7 +66,7 @@
           <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
         </div>
 
-        <button mat-flat-button class="primary-button" type="submit" [disabled]="loading() || auth.isBlocked()">
+        <button mat-flat-button class="primary-button" type="submit" [disabled]="loading()">
           @if (loading()) { <mat-spinner diameter="20" /> } @else { Ingresar como {{ selectedRoleLabel() }} }
         </button>
       </form>

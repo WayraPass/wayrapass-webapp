@@ -20,6 +20,13 @@
   font-family: var(--font-display); font-size: 22px; line-height: 1; font-weight: 800; font-style: italic;
 }
 
+.brand .brand-logo {
+  width: 176px;
+  height: 72px;
+  display: block;
+  object-fit: contain;
+}
+
 .brand .brand-mark {
   display: flex;
   align-items: center;

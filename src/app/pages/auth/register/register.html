@@ -1,8 +1,7 @@
 <div class="auth-page compact-auth-page">
   <aside class="auth-brand-panel">
     <a class="brand" routerLink="/login" aria-label="WayraPass, volver al inicio">
-      <span class="brand-mark" aria-hidden="true">W</span>
-      <span class="brand-word">WAYRA<span>PASS</span></span>
+      <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
     </a>
     <div class="brand-copy">
       <h1>Crea tu cuenta</h1>
@@ -18,10 +17,9 @@
   <main class="auth-form-panel">
     <section class="auth-card register-card" aria-labelledby="register-title">
       <div class="brand mobile-wordmark">
-        <span class="brand-mark" aria-hidden="true">W</span>
-        <span class="brand-word">WAYRA<span>PASS</span></span>
+        <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
       </div>
-      <header class="form-heading"><h2 id="register-title">Crear cuenta</h2><p>Completa tus datos para usar la simulación de WayraPass.</p></header>
+      <header class="form-heading"><h2 id="register-title">Crear cuenta</h2><p>Completa tus datos para acceder a WayraPass.</p></header>
 
       <fieldset class="role-selector public-role-selector">
         <legend>Tipo de cuenta</legend>
@@ -46,10 +44,22 @@
         @if (form.controls.email.hasError('required') && form.controls.email.touched) { <p class="field-error">El correo es obligatorio.</p> }
         @else if (form.controls.email.hasError('email') && form.controls.email.touched) { <p class="field-error">Ingresa un correo válido.</p> }
 
+        <label class="field-label" for="register-phone">Teléfono (opcional)</label>
+        <div class="input-shell" [class.invalid]="form.controls.phone.invalid && form.controls.phone.touched"><input id="register-phone" type="tel" formControlName="phone" autocomplete="tel" placeholder="+51 999 999 999" /></div>
+        @if (form.controls.phone.invalid && form.controls.phone.touched) { <p class="field-error">Ingresa un teléfono válido de 7 a 30 caracteres.</p> }
+
+        @if (selectedRole() === 'STUDENT') {
+          <div class="field-grid">
+            <div><label class="field-label" for="institution-id">ID de institución</label><div class="input-shell" [class.invalid]="form.controls.institutionId.invalid && form.controls.institutionId.touched"><input id="institution-id" type="number" min="1" formControlName="institutionId" /></div>
+              @if (form.controls.institutionId.invalid && form.controls.institutionId.touched) { <p class="field-error">Ingresa el ID de una institución existente.</p> }</div>
+            <div><label class="field-label" for="student-code">Código estudiantil (opcional)</label><div class="input-shell"><input id="student-code" formControlName="studentCode" maxlength="40" /></div></div>
+          </div>
+        }
+
         <label class="field-label" for="register-password">Contraseña</label>
         <div class="input-shell password-shell"><input id="register-password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="new-password" /><button type="button" (click)="showPassword.set(!showPassword())">{{ showPassword() ? 'Ocultar' : 'Mostrar' }}</button></div>
         @if (form.controls.password.hasError('required') && form.controls.password.touched) { <p class="field-error">La contraseña es obligatoria.</p> }
-        @else if (form.controls.password.hasError('minlength') && form.controls.password.touched) { <p class="field-error">Debe tener al menos 8 caracteres.</p> }
+        @else if (form.controls.password.hasError('minlength') && form.controls.password.touched) { <p class="field-error">Debe tener al menos 12 caracteres.</p> }
 
         <label class="field-label" for="confirm-password">Confirmar contraseña</label>
         <div class="input-shell password-shell"><input id="confirm-password" [type]="showConfirmPassword() ? 'text' : 'password'" formControlName="confirmPassword" autocomplete="new-password" /><button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())">{{ showConfirmPassword() ? 'Ocultar' : 'Mostrar' }}</button></div>

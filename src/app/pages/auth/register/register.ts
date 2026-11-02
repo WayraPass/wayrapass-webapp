@@ -35,13 +35,24 @@ export class Register {
   readonly form = this.fb.nonNullable.group({
     firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
     lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
-    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(72)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+    phone: ['', [Validators.maxLength(30), Validators.pattern(/^$|^\+?[0-9][0-9 ()-]{6,29}$/)]],
+    institutionId: [0, [Validators.required, Validators.min(1)]],
+    studentCode: ['', Validators.maxLength(40)],
+    password: ['', [Validators.required, Validators.minLength(12), Validators.maxLength(128)]],
     confirmPassword: ['', Validators.required],
   }, { validators: passwordsMatch });
 
   selectRole(role: SelfRegistrationRole): void {
     this.selectedRole.set(role);
+    const institutionId = this.form.controls.institutionId;
+    if (role === 'STUDENT') {
+      institutionId.setValidators([Validators.required, Validators.min(1)]);
+    } else {
+      institutionId.clearValidators();
+      institutionId.setValue(0);
+    }
+    institutionId.updateValueAndValidity();
   }
 
   submit(): void {
@@ -53,12 +64,18 @@ export class Register {
 
     const value = this.form.getRawValue();
     this.loading.set(true);
-    this.auth.register({
+    const request = {
       fullName: `${value.firstName} ${value.lastName}`.trim(),
-      email: value.email,
+      email: value.email.trim(),
       password: value.password,
+      phone: value.phone.trim() || undefined,
       role: this.selectedRole(),
-    }).pipe(finalize(() => this.loading.set(false))).subscribe({
+      ...(this.selectedRole() === 'STUDENT' ? {
+        institutionId: value.institutionId,
+        studentCode: value.studentCode.trim() || undefined,
+      } : {}),
+    };
+    this.auth.register(request).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => void this.router.navigate(['/login'], { queryParams: { registered: '1' } }),
       error: (error: unknown) => this.errorMessage.set(authErrorMessage(error)),
     });

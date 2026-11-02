@@ -4,7 +4,6 @@ export type SelfRegistrationRole = Extract<UserRole, 'STUDENT' | 'FAMILY'>;
 export interface LoginRequest {
   email: string;
   password: string;
-  role: UserRole;
   rememberMe: boolean;
 }
 
@@ -12,44 +11,44 @@ export interface RegisterRequest {
   fullName: string;
   email: string;
   password: string;
+  phone?: string;
   role: SelfRegistrationRole;
+  institutionId?: number;
+  studentCode?: string;
 }
 
 export interface AuthenticatedUser {
-  id: string;
+  id: number;
   email: string;
   fullName: string;
+  phone: string | null;
   role: UserRole;
+  enabled?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface MockUser extends AuthenticatedUser {
-  /** Solo para la simulación local de la US01. Nunca guardar contraseñas así en producción. */
-  password: string;
-}
-
-export interface PasswordResetTicket {
-  email: string;
+export interface AuthResponse {
   token: string;
-  expiresAt: number;
+  tokenType: 'Bearer' | string;
+  user: AuthenticatedUser;
+}
+
+export interface PasswordResetResponse {
+  message: string;
+  developmentToken: string | null;
 }
 
 export interface ResetPasswordRequest {
-  email: string;
   token: string;
   newPassword: string;
 }
 
-export type AuthErrorCode =
-  | 'BLOCKED'
-  | 'INVALID_CREDENTIALS'
-  | 'ROLE_MISMATCH'
-  | 'EMAIL_EXISTS'
-  | 'EMAIL_NOT_FOUND'
-  | 'INVALID_RESET_LINK';
-
-export class AuthMockError extends Error {
-  constructor(readonly code: AuthErrorCode, message: string) {
-    super(message);
-    this.name = 'AuthMockError';
-  }
+export interface ApiErrorResponse {
+  timestamp?: string;
+  status?: number;
+  error?: string;
+  message?: string;
+  path?: string;
+  fieldErrors?: Record<string, string> | null;
 }

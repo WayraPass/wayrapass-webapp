@@ -23,22 +23,21 @@ export class ResetPassword {
   private readonly route = inject(ActivatedRoute);
 
   readonly token = this.route.snapshot.queryParamMap.get('token') ?? '';
-  readonly email = this.route.snapshot.queryParamMap.get('email') ?? '';
   readonly loading = signal(false);
   readonly showPassword = signal(false);
   readonly completed = signal(false);
   readonly errorMessage = signal('');
   readonly form = this.fb.nonNullable.group({
-    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(72)]],
+    password: ['', [Validators.required, Validators.minLength(12), Validators.maxLength(128)]],
     confirmPassword: ['', Validators.required],
   }, { validators: passwordsMatch });
 
   submit(): void {
     this.errorMessage.set('');
-    if (!this.token || !this.email) { this.errorMessage.set('El enlace mock está incompleto. Solicita uno nuevo.'); return; }
+    if (!this.token) { this.errorMessage.set('El enlace de recuperación está incompleto. Solicita uno nuevo.'); return; }
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);
-    this.auth.resetPassword({ email: this.email, token: this.token, newPassword: this.form.controls.password.value }).pipe(
+    this.auth.resetPassword({ token: this.token, newPassword: this.form.controls.password.value }).pipe(
       finalize(() => this.loading.set(false)),
     ).subscribe({
       next: () => this.completed.set(true),
