@@ -1,15 +1,34 @@
 :host {
-  --primary: #24335e;
-  --primary-dark: #14203f;
-  --secondary: #6f9fcb;
-  --secondary-dark: #2f6e8c;
-  --accent: #e6b04a;
-  --success: #3f8f8c;
-  --background: #f7f6f3;
-  --surface: #fff;
-  --text: #1c2030;
-  --muted: #5c6272;
-  --line: #e1e3e9;
+  --wp-navy: #06213F;
+  --wp-navy-soft: #173259;
+  --wp-navy-dark: #142344;
+  --wp-amber: #F9B723;
+  --wp-amber-soft: #EFB640;
+  --wp-amber-pastel: #FEF1C7;
+  --wp-teal: #3B9694;
+  --wp-metal-blue: #2B4172;
+  --wp-gray: #7A8894;
+  --wp-gray-dark: #66717F;
+  --wp-gray-light: #EDF0F3;
+  --wp-white: #FFFFFF;
+  --wp-border: #D9DEE3;
+  --wp-surface: #F4F4F2;
+  --wp-tint: #E7EBF4;
+  --wp-soft-teal: #E3EFEF;
+  --wp-red: #A52B24;
+  --wp-green: #1E7550;
+
+  --primary: var(--wp-navy);
+  --primary-dark: var(--wp-navy-dark);
+  --secondary: var(--wp-amber);
+  --secondary-dark: var(--wp-metal-blue);
+  --accent: var(--wp-amber-soft);
+  --success: var(--wp-green);
+  --background: var(--wp-surface);
+  --surface: var(--wp-white);
+  --text: var(--wp-navy);
+  --muted: var(--wp-gray-dark);
+  --line: var(--wp-border);
   display: block;
   min-height: 100vh;
   background: var(--background);
@@ -17,9 +36,7 @@
   font-family: 'DM Sans', sans-serif;
 }
 
-.history-shell {
-  min-height: 100vh;
-}
+.history-shell { min-height: 100vh; }
 
 .sidebar {
   position: fixed;
@@ -30,7 +47,7 @@
   flex-direction: column;
   padding: 28px 18px 20px;
   background: var(--primary-dark);
-  color: #fff;
+  color: var(--wp-white);
 }
 
 .brand {
@@ -38,7 +55,7 @@
   align-items: center;
   gap: 10px;
   margin: 2px 14px 48px;
-  color: #fff;
+  color: var(--wp-white);
   font-family: 'Manrope', sans-serif;
   font-size: 23px;
   font-style: italic;
@@ -47,18 +64,10 @@
   text-decoration: none;
 }
 
-.brand-word {
-  color: #fff;
-}
+.brand-word { color: var(--wp-white); }
+.brand-word span { color: var(--secondary); }
 
-.brand-word span {
-  color: var(--accent);
-}
-
-.navigation {
-  display: grid;
-  gap: 7px;
-}
+.navigation { display: grid; gap: 7px; }
 
 .nav-item {
   display: flex;
@@ -73,8 +82,8 @@
 }
 
 .nav-item.active {
-  color: #fff;
-  background: #293d63;
+  color: var(--wp-white);
+  background: rgba(23,50,89,.92);
   box-shadow: inset 3px 0 var(--secondary);
 }
 
@@ -95,8 +104,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f9b723, #eaa118);
-  color: #14203f;
+  background: linear-gradient(135deg, var(--wp-amber), var(--wp-amber-soft));
+  color: var(--wp-navy-dark);
   font-size: 12px;
   font-weight: 800;
 }
@@ -110,7 +119,7 @@
 
 .user-meta strong {
   overflow: hidden;
-  color: #fff;
+  color: var(--wp-white);
   font-size: 13px;
   font-weight: 700;
   text-overflow: ellipsis;
@@ -132,19 +141,12 @@
   border: 0;
   border-radius: 10px;
   background: rgba(255,255,255,.08);
-  color: #fff;
+  color: var(--wp-white);
   cursor: pointer;
 }
 
-.logout-button:hover {
-  background: rgba(255,255,255,.14);
-}
-
-.logout-button mat-icon {
-  width: 18px;
-  height: 18px;
-  font-size: 18px;
-}
+.logout-button:hover { background: rgba(255,255,255,.14); }
+.logout-button mat-icon { width: 18px; height: 18px; font-size: 18px; }
 
 .main-content {
   min-height: 100vh;
@@ -178,11 +180,7 @@
   line-height: 1.2;
 }
 
-.subtitle {
-  margin-bottom: 0;
-  color: var(--muted);
-  font-size: 15px;
-}
+.subtitle { margin-bottom: 0; color: var(--muted); font-size: 15px; }
 
 .role-badge {
   display: inline-flex;
@@ -190,9 +188,9 @@
   align-items: center;
   gap: 7px;
   padding: 0 12px;
-  border: 1px solid #d8e5ef;
+  border: 1px solid var(--wp-border);
   border-radius: 30px;
-  background: #eef4f8;
+  background: var(--wp-gray-light);
   color: var(--primary);
   font-size: 12px;
   font-weight: 700;
@@ -211,7 +209,7 @@
   border: 1px solid var(--line);
   border-radius: 17px;
   background: var(--surface);
-  box-shadow: 0 3px 12px rgba(20,32,63,.025);
+  box-shadow: 0 3px 12px rgba(6, 33, 63, 0.025);
 }
 
 .panel-heading {
@@ -242,15 +240,13 @@
   flex: 0 0 auto;
   padding: 6px 10px;
   border-radius: 20px;
-  background: #eef4f8;
+  background: var(--wp-gray-light);
   color: var(--secondary-dark);
   font-size: 11px;
   font-weight: 700;
 }
 
-.table-wrap {
-  overflow-x: auto;
-}
+.table-wrap { overflow-x: auto; }
 
 table {
   width: 100%;
@@ -275,13 +271,9 @@ td {
   white-space: nowrap;
 }
 
-.trip-row {
-  cursor: pointer;
-  outline: none;
-}
-
+.trip-row { cursor: pointer; outline: none; }
 .trip-row.selected {
-  background: #e8f0f6;
+  background: var(--wp-tint);
   box-shadow: inset 3px 0 var(--primary);
 }
 
@@ -306,31 +298,21 @@ td {
 }
 
 .status.complete {
-  background: #e1efee;
+  background: var(--wp-soft-teal);
   color: var(--primary);
 }
 
-.status.complete > span {
-  background: var(--success);
-}
-
+.status.complete > span { background: var(--success); }
 .status.delayed {
-  background: #f9edcf;
-  color: #78520e;
+  background: var(--wp-amber-pastel);
+  color: var(--wp-navy-dark);
 }
-
-.status.delayed > span {
-  background: var(--accent);
-}
-
+.status.delayed > span { background: var(--accent); }
 .status.missed {
-  background: #eaebee;
-  color: #565c68;
+  background: var(--wp-gray-light);
+  color: var(--wp-gray-dark);
 }
-
-.status.missed > span {
-  background: #727987;
-}
+.status.missed > span { background: var(--wp-gray); }
 
 .pagination {
   display: flex;
@@ -340,16 +322,8 @@ td {
   margin-top: 18px;
 }
 
-.pagination-summary {
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
+.pagination-summary { color: var(--muted); font-size: 11px; }
+.pagination-controls { display: flex; align-items: center; gap: 5px; }
 
 .page-button {
   display: inline-flex;
@@ -371,18 +345,15 @@ td {
 .page-button.current {
   border-color: var(--primary);
   background: var(--primary);
-  color: #fff;
+  color: var(--wp-white);
 }
 
 .page-button:disabled {
-  color: #a4a8b0;
+  color: var(--wp-gray);
   cursor: not-allowed;
 }
 
-.detail-panel {
-  position: sticky;
-  top: 24px;
-}
+.detail-panel { position: sticky; top: 24px; }
 
 .route-title {
   display: flex;
@@ -401,11 +372,7 @@ td {
   line-height: 1.45;
 }
 
-.route-title p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-}
+.route-title p { margin: 0; color: var(--muted); font-size: 12px; }
 
 .trip-facts {
   display: grid;
@@ -424,11 +391,7 @@ td {
   background: var(--background);
 }
 
-.fact span {
-  color: var(--muted);
-  font-size: 11px;
-}
-
+.fact span { color: var(--muted); font-size: 11px; }
 .fact strong {
   color: var(--primary);
   font-size: 14px;
@@ -490,10 +453,7 @@ td {
   background: var(--success);
 }
 
-.stop-name {
-  line-height: 1.4;
-}
-
+.stop-name { line-height: 1.4; }
 .stop-list time {
   color: var(--primary);
   font-weight: 700;
@@ -578,12 +538,8 @@ td {
   }
 
   .pagination-summary { text-align: center; }
-
   .pagination-controls { justify-content: center; }
-
   .page-button { height: 36px; }
-
   .route-title { flex-wrap: wrap; }
-
   .demo-note { text-align: center; }
 }
