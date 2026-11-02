@@ -3,6 +3,10 @@ export type LocationFreshness = 'RECENT' | 'STALE' | 'UNAVAILABLE';
 export type EtaSource = 'PLANNED' | 'OPERATIONAL' | 'UNAVAILABLE';
 export type DriverAuthorizationStatus = 'PENDING' | 'AUTHORIZED' | 'REJECTED';
 export type DriverOperationalStatus = 'AVAILABLE' | 'UNAVAILABLE' | 'INACTIVE';
+export type BoardingStatus = 'CONFIRMED' | 'CANCELLED';
+export type IncidentType = 'TRAFFIC_DELAY' | 'DETOUR' | 'VEHICLE_FAILURE' | 'STOP_UNAVAILABLE' | 'OTHER';
+export type IncidentPriority = 'NORMAL' | 'HIGH' | 'CRITICAL';
+export type IncidentStatus = 'OPEN' | 'RESOLVED';
 
 export interface CurrentTripResponse {
   available: boolean;
@@ -81,4 +85,60 @@ export interface DriverCredential {
   authorizationStatus: DriverAuthorizationStatus | null;
   operationalStatus: DriverOperationalStatus | null;
   authorized: boolean;
+}
+
+export interface BoardingRequest {
+  tripId: number;
+  stopId: number;
+  vehicleQrToken: string;
+}
+
+export interface BoardingResponse {
+  id: number;
+  tripId: number;
+  studentId: number;
+  stopId: number;
+  boardedAt: string;
+}
+
+export interface TripHistoryItem {
+  tripId: number;
+  routeId: number;
+  routeCode: string;
+  routeName: string;
+  routeOrigin: string;
+  routeDestination: string;
+  institutionName: string;
+  campusName: string;
+  scheduledStartAt: string;
+  scheduledEndAt: string;
+  actualStartAt: string | null;
+  actualEndAt: string | null;
+  tripStatus: TripStatus;
+  boardingStatus: BoardingStatus;
+  boardedAt: string;
+  stopId: number;
+  stopName: string;
+  delayed: boolean;
+}
+
+export interface TripIncident {
+  id: number;
+  type: IncidentType;
+  description: string | null;
+  delayMinutes: number;
+  priority: IncidentPriority;
+  status: IncidentStatus;
+  createdAt: string;
+}
+
+export interface StudentTripHistoryDetail {
+  trip: TripHistoryItem;
+  driverId: number | null;
+  driverName: string | null;
+  vehicleId: number | null;
+  vehiclePlate: string | null;
+  vehicleBrand: string | null;
+  vehicleModel: string | null;
+  incidents: TripIncident[];
 }

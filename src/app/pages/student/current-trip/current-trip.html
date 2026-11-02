@@ -34,6 +34,36 @@
       </article>
     </section>
 
+    <section class="boarding-card" aria-labelledby="boarding-title">
+      <span class="boarding-icon"><mat-icon>qr_code_scanner</mat-icon></span>
+      <div class="boarding-copy">
+        <p class="eyebrow">US05 · Abordaje</p>
+        <h2 id="boarding-title">Confirmar abordaje</h2>
+        @if (boardingRegistered()) {
+          <p class="boarding-success"><mat-icon>check_circle</mat-icon>{{ boardingResult() ? 'Abordaje confirmado correctamente.' : boardingError() }}</p>
+          @if (boardingResult(); as registered) { <small>Registrado {{ registered.boardedAt | date:'medium' }} en {{ current.assignedStop?.name }}.</small> }
+        } @else if (canBoard()) {
+          <p>Valida el código QR colocado en el vehículo <strong>{{ current.vehicle?.plate }}</strong>. WayraPass usará automáticamente este viaje y tu paradero asignado.</p>
+          <button type="button" class="boarding-action" (click)="openBoarding()"><mat-icon>qr_code_scanner</mat-icon>Escanear QR del vehículo</button>
+        } @else {
+          <p class="boarding-unavailable">El abordaje todavía no está disponible para este viaje.</p>
+        }
+      </div>
+    </section>
+
+    @if (boardingPanelOpen()) {
+      <section class="boarding-panel" aria-label="Validar código QR del vehículo">
+        <div class="panel-heading"><div><p class="eyebrow">Validación segura</p><h2>Código del QR</h2></div><button type="button" class="close-button" (click)="closeBoarding()" aria-label="Cerrar"><mat-icon>close</mat-icon></button></div>
+        <p>Esta versión web permite ingresar el código leído del QR. El código se mantiene únicamente durante esta validación.</p>
+        <label for="boarding-code">Código de abordaje</label>
+        <div class="boarding-input"><mat-icon>qr_code_2</mat-icon><input id="boarding-code" type="password" autocomplete="off" [ngModel]="boardingCode()" (ngModelChange)="boardingCode.set($event)" placeholder="Ingresa el código leído" /></div>
+        @if (boardingError()) { <p class="boarding-error" role="alert">{{ boardingError() }}</p> }
+        <div class="boarding-buttons"><button type="button" class="secondary-action" (click)="closeBoarding()" [disabled]="boardingLoading()">Cancelar</button><button type="button" class="boarding-action" (click)="confirmBoarding()" [disabled]="boardingLoading()">@if (boardingLoading()) { <mat-spinner diameter="19" /> } @else { <mat-icon>check</mat-icon> }Confirmar abordaje</button></div>
+      </section>
+    }
+
+    @if (boardingError() && !boardingPanelOpen() && !boardingRegistered()) { <div class="alert error boarding-alert" role="alert"><mat-icon>error</mat-icon><span>{{ boardingError() }}</span></div> }
+
     <section class="tracking-grid">
       <article class="info-card location-card">
         <div class="section-title"><div><p class="eyebrow">Ubicación</p><h2>Posición del vehículo</h2></div>

@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
-import { CurrentTripResponse } from '../../../core/models/trip.models';
+import { HttpErrorResponse } from '@angular/common/http';
+import { BoardingRequest, BoardingResponse, CurrentTripResponse } from '../../../core/models/trip.models';
+import { BoardingService } from '../../../core/services/boarding.service';
 import { TripService } from '../../../core/services/trip.service';
 import { CURRENT_TRIP_POLL_MS, CurrentTrip } from './current-trip';
 
@@ -37,17 +39,32 @@ class TripServiceStub {
   }
 }
 
+class BoardingServiceStub {
+  request: BoardingRequest | null = null;
+  result: Observable<BoardingResponse> = of({ id: 9, tripId: 4, studentId: 1, stopId: 1, boardedAt: '2026-11-02T12:20:00Z' });
+
+  confirm(request: BoardingRequest) {
+    this.request = request;
+    return this.result;
+  }
+}
+
 describe('CurrentTrip US03/US04', () => {
   let fixture: ComponentFixture<CurrentTrip>;
   let service: TripServiceStub;
+  let boardings: BoardingServiceStub;
 
   beforeEach(async () => {
     vi.useFakeTimers();
     await TestBed.configureTestingModule({
       imports: [CurrentTrip],
-      providers: [{ provide: TripService, useClass: TripServiceStub }],
+      providers: [
+        { provide: TripService, useClass: TripServiceStub },
+        { provide: BoardingService, useClass: BoardingServiceStub },
+      ],
     }).compileComponents();
     service = TestBed.inject(TripService) as unknown as TripServiceStub;
+    boardings = TestBed.inject(BoardingService) as unknown as BoardingServiceStub;
   });
 
   afterEach(() => {
@@ -91,5 +108,55 @@ describe('CurrentTrip US03/US04', () => {
     fixture.destroy();
     vi.advanceTimersByTime(CURRENT_TRIP_POLL_MS * 2);
     expect(service.calls).toBe(3);
+  });
+
+  it('handles a duplicate boarding response as an already registered boarding', () => {
+    boardings.result = throwError(() => new HttpErrorResponse({
+      status: 409,
+      error: { message: 'El estudiante ya abordó este viaje.' },
+    }));
+    fixture = TestBed.createComponent(CurrentTrip);
+    fixture.detectChanges();
+    vi.advanceTimersByTime(0);
+    const component = fixture.componentInstance;
+    component.boardingCode.set('QR-WP-D01');
+    component.confirmBoarding();
+    fixture.detectChanges();
+
+    expect(component.boardingRegistered()).toBe(true);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Tu abordaje ya había sido registrado.');
+  });
+
+  it('shows the backend validation when the QR code is invalid', () => {
+    boardings.result = throwError(() => new HttpErrorResponse({
+      status: 400,
+      error: { message: 'El QR no corresponde al vehículo asignado.' },
+    }));
+    fixture = TestBed.createComponent(CurrentTrip);
+    fixture.detectChanges();
+    vi.advanceTimersByTime(0);
+    const component = fixture.componentInstance;
+    component.openBoarding();
+    component.boardingCode.set('QR-INCORRECTO');
+    component.confirmBoarding();
+    fixture.detectChanges();
+
+    expect(component.boardingRegistered()).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('El QR no corresponde al vehículo asignado.');
+  });
+
+  it('does not show the boarding action for a non-operational trip', () => {
+    service.response = {
+      ...availableTrip,
+      trip: { ...availableTrip.trip!, tripStatus: 'SCHEDULED' },
+    };
+    fixture = TestBed.createComponent(CurrentTrip);
+    fixture.detectChanges();
+    vi.advanceTimersByTime(0);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('Escanear QR del vehículo');
+    expect(text).toContain('El abordaje todavía no está disponible');
   });
 });

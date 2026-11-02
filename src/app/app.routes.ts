@@ -7,7 +7,6 @@ import { ResetPassword } from './pages/auth/reset-password/reset-password';
 import { CoordinatorDashboard } from './pages/coordinator/dashboard/dashboard';
 import { DriverDashboard } from './pages/driver/dashboard/dashboard';
 import { FamilyDashboard } from './pages/family/dashboard/dashboard';
-import { TripHistory } from './pages/trip-history/trip-history';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -24,6 +23,7 @@ export const routes: Routes = [
       { path: 'dashboard', loadComponent: () => import('./pages/student/dashboard/dashboard').then((m) => m.StudentDashboard), title: 'Inicio · WayraPass' },
       { path: 'routes', loadComponent: () => import('./pages/student/route-search/route-search').then((m) => m.StudentRouteSearch), title: 'Buscar rutas · WayraPass' },
       { path: 'current-trip', loadComponent: () => import('./pages/student/current-trip/current-trip').then((m) => m.CurrentTrip), title: 'Mi viaje actual · WayraPass' },
+      { path: 'history', loadComponent: () => import('./pages/trip-history/trip-history').then((m) => m.TripHistory), title: 'Mi historial · WayraPass' },
     ],
   },
   { path: 'family/dashboard', component: FamilyDashboard, canActivate: [authGuard, roleGuard('FAMILY')] },

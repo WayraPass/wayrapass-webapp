@@ -1,87 +1,122 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { AuthService, roleLabel } from '../../core/services/auth.service';
-
-type TripStatus = 'Completado' | 'Con retraso' | 'No abordado';
-type Stop = { name: string; time: string };
-type Trip = {
-  id: number;
-  date: string;
-  route: string;
-  direction: 'Ida' | 'Vuelta';
-  departure: string;
-  arrival: string;
-  status: TripStatus;
-  bus: string;
-  duration: number | null;
-  stops: Stop[];
-};
-
-const ROUTE_STOPS: Stop[] = [
-  { name: 'Paradero de abordaje', time: '07:10' },
-  { name: 'Paradero Los Olivos', time: '07:24' },
-  { name: 'Paradero Central', time: '07:38' },
-  { name: 'Puerta de la Universidad', time: '07:52' },
-];
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { finalize } from 'rxjs';
+import {
+  BoardingStatus,
+  IncidentPriority,
+  IncidentStatus,
+  IncidentType,
+  StudentTripHistoryDetail,
+  TripHistoryItem,
+  TripStatus,
+} from '../../core/models/trip.models';
+import { TripService, historyErrorMessage } from '../../core/services/trip.service';
 
 @Component({
   selector: 'app-trip-history',
   standalone: true,
-  imports: [MatIconModule],
+  imports: [DatePipe, ReactiveFormsModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './trip-history.html',
   styleUrl: './trip-history.css',
 })
 export class TripHistory {
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
-  readonly user = this.auth.user;
-  readonly userRoleLabel = computed(() => this.user() ? roleLabel(this.user()!.role) : 'Usuario');
-  readonly initials = computed(() =>
-    (this.user()?.fullName ?? '')
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((word) => word[0]!.toUpperCase())
-      .join(''),
-  );
+  private readonly fb = inject(FormBuilder);
+  private readonly tripsService = inject(TripService);
 
-  private readonly pageSize = 6;
-  readonly currentPage = signal(1);
-  readonly selectedTrip = signal<Trip | null>(null);
+  readonly trips = signal<TripHistoryItem[]>([]);
+  readonly selectedTripId = signal<number | null>(null);
+  readonly detail = signal<StudentTripHistoryDetail | null>(null);
+  readonly loading = signal(false);
+  readonly detailLoading = signal(false);
+  readonly errorMessage = signal('');
+  readonly detailError = signal('');
 
-  readonly trips: Trip[] = [
-    { id: 1, date: '23/10/2026', route: 'Ruta 01 · Norte', direction: 'Ida', departure: '07:10', arrival: '07:52', status: 'Completado', bus: 'ABC-123', duration: 42, stops: ROUTE_STOPS },
-    { id: 2, date: '22/10/2026', route: 'Ruta 01 · Norte', direction: 'Vuelta', departure: '17:05', arrival: '17:51', status: 'Completado', bus: 'ABC-123', duration: 46, stops: [...ROUTE_STOPS].reverse() },
-    { id: 3, date: '21/10/2026', route: 'Ruta 03 · Este', direction: 'Ida', departure: '07:18', arrival: '08:04', status: 'Con retraso', bus: 'DEF-456', duration: 46, stops: ROUTE_STOPS },
-    { id: 4, date: '20/10/2026', route: 'Ruta 01 · Norte', direction: 'Vuelta', departure: '17:02', arrival: '17:46', status: 'Completado', bus: 'ABC-123', duration: 44, stops: [...ROUTE_STOPS].reverse() },
-    { id: 5, date: '19/10/2026', route: 'Ruta 02 · Sur', direction: 'Ida', departure: '—', arrival: '—', status: 'No abordado', bus: 'GHI-789', duration: null, stops: ROUTE_STOPS },
-    { id: 6, date: '16/10/2026', route: 'Ruta 01 · Norte', direction: 'Ida', departure: '07:08', arrival: '07:49', status: 'Completado', bus: 'ABC-123', duration: 41, stops: ROUTE_STOPS },
-    { id: 7, date: '15/10/2026', route: 'Ruta 03 · Este', direction: 'Vuelta', departure: '17:12', arrival: '18:01', status: 'Completado', bus: 'DEF-456', duration: 49, stops: [...ROUTE_STOPS].reverse() },
-    { id: 8, date: '14/10/2026', route: 'Ruta 02 · Sur', direction: 'Ida', departure: '07:15', arrival: '08:01', status: 'Con retraso', bus: 'GHI-789', duration: 46, stops: ROUTE_STOPS },
-  ];
-
-  readonly pageCount = Math.ceil(this.trips.length / this.pageSize);
-  readonly visibleTrips = computed(() => {
-    const start = (this.currentPage() - 1) * this.pageSize;
-    return this.trips.slice(start, start + this.pageSize);
+  readonly filters = this.fb.nonNullable.group({
+    from: isoDate(addDays(new Date(), -365)),
+    to: isoDate(new Date()),
   });
 
   constructor() {
-    this.selectedTrip.set(this.trips[0]);
+    this.loadHistory();
   }
 
-  selectTrip(trip: Trip): void {
-    this.selectedTrip.set(trip);
+  loadHistory(): void {
+    const { from, to } = this.filters.getRawValue();
+    this.errorMessage.set('');
+    if (!from || !to || from > to) {
+      this.errorMessage.set('La fecha inicial no puede ser posterior a la fecha final.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.tripsService.getHistory(from, to).pipe(
+      finalize(() => this.loading.set(false)),
+    ).subscribe({
+      next: (trips) => {
+        this.trips.set(trips);
+        const currentSelection = this.selectedTripId();
+        const selected = trips.find((trip) => trip.tripId === currentSelection) ?? trips[0] ?? null;
+        if (selected) this.selectTrip(selected);
+        else {
+          this.selectedTripId.set(null);
+          this.detail.set(null);
+        }
+      },
+      error: (error: unknown) => this.errorMessage.set(historyErrorMessage(error)),
+    });
   }
 
-  goToPage(page: number): void {
-    if (page < 1 || page > this.pageCount) return;
-    this.currentPage.set(page);
+  selectTrip(trip: TripHistoryItem): void {
+    this.selectedTripId.set(trip.tripId);
+    this.detail.set(null);
+    this.detailError.set('');
+    this.detailLoading.set(true);
+    this.tripsService.getHistoryDetail(trip.tripId).pipe(
+      finalize(() => this.detailLoading.set(false)),
+    ).subscribe({
+      next: (detail) => this.detail.set(detail),
+      error: (error: unknown) => this.detailError.set(historyErrorMessage(error)),
+    });
   }
 
-  logout(): void {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
+  retryDetail(): void {
+    const selected = this.trips().find((trip) => trip.tripId === this.selectedTripId());
+    if (selected) this.selectTrip(selected);
   }
+
+  tripStatusLabel(status: TripStatus): string {
+    return ({ SCHEDULED: 'Programado', BOARDING: 'En embarque', IN_PROGRESS: 'En recorrido', COMPLETED: 'Finalizado', CANCELLED: 'Cancelado' } as const)[status];
+  }
+
+  boardingStatusLabel(status: BoardingStatus): string {
+    return status === 'CONFIRMED' ? 'Abordaje confirmado' : 'Abordaje cancelado';
+  }
+
+  incidentTypeLabel(type: IncidentType): string {
+    return ({ TRAFFIC_DELAY: 'Demora por tráfico', DETOUR: 'Desvío', VEHICLE_FAILURE: 'Falla del vehículo', STOP_UNAVAILABLE: 'Paradero no disponible', OTHER: 'Otra incidencia' } as const)[type];
+  }
+
+  incidentPriorityLabel(priority: IncidentPriority): string {
+    return ({ NORMAL: 'Normal', HIGH: 'Alta', CRITICAL: 'Crítica' } as const)[priority];
+  }
+
+  incidentStatusLabel(status: IncidentStatus): string {
+    return status === 'OPEN' ? 'Abierta' : 'Resuelta';
+  }
+}
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function isoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }

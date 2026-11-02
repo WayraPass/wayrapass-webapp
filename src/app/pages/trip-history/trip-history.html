@@ -1,139 +1,54 @@
-<div class="history-shell">
-  <aside class="sidebar" aria-label="Navegación principal">
-    <a class="brand" href="/historial-rutas" aria-label="WayraPass, historial de viajes">
-      <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
-    </a>
+<div class="history-page">
+  <header class="page-heading"><div><p class="eyebrow">US08 · Movilidad</p><h1>Mi historial</h1><p>Consulta los viajes en los que tu abordaje fue registrado.</p></div></header>
 
-    <nav class="navigation">
-      <span class="nav-item"><mat-icon>directions_bus</mat-icon><span>Buses en vivo</span></span>
-      <span class="nav-item"><mat-icon>alt_route</mat-icon><span>Mis rutas</span></span>
-      <a class="nav-item active" href="/historial-rutas" aria-current="page"><mat-icon>history</mat-icon><span>Mis viajes</span></a>
-      <span class="nav-item"><mat-icon>notifications_none</mat-icon><span>Avisos</span></span>
-      <span class="nav-item"><mat-icon>settings</mat-icon><span>Ajustes</span></span>
-    </nav>
+  <section class="filter-card" aria-labelledby="history-filters">
+    <div><h2 id="history-filters">Periodo</h2><p>El historial se consulta directamente en WayraPass.</p></div>
+    <form [formGroup]="filters" (ngSubmit)="loadHistory()">
+      <label><span>Desde</span><input type="date" formControlName="from" /></label>
+      <label><span>Hasta</span><input type="date" formControlName="to" /></label>
+      <button type="submit" [disabled]="loading()">@if (loading()) { <mat-spinner diameter="19" /> } @else { <mat-icon>search</mat-icon> }Consultar</button>
+    </form>
+  </section>
 
-    <div class="user-card">
-      <span class="user-avatar" aria-hidden="true">{{ initials() }}</span>
-      <div class="user-meta">
-        <strong>{{ user()?.fullName ?? 'Usuario' }}</strong>
-        <small>{{ userRoleLabel() }}</small>
-      </div>
-      <button type="button" class="logout-button" aria-label="Cerrar sesión" (click)="logout()">
-        <mat-icon>logout</mat-icon>
-      </button>
-    </div>
-  </aside>
+  @if (errorMessage()) { <div class="alert error" role="alert"><mat-icon>error</mat-icon><span>{{ errorMessage() }}</span><button type="button" (click)="loadHistory()">Reintentar</button></div> }
 
-  <main class="main-content">
-    <header class="page-heading">
-      <div>
-        <p class="eyebrow">TU MOVILIDAD</p>
-        <h1>Historial de viajes</h1>
-        <p class="subtitle">Revisa tus traslados en los buses de <strong>Universidad</strong>.</p>
-      </div>
-      <span class="role-badge"><mat-icon>school</mat-icon> {{ userRoleLabel() }}</span>
-    </header>
-
-    <div class="content-grid">
-      <section class="panel trips-panel" aria-labelledby="trips-heading">
-        <div class="panel-heading">
-          <div>
-            <h2 id="trips-heading">Mis viajes</h2>
-            <p>Selecciona un viaje para ver el detalle del recorrido.</p>
-          </div>
-          <span class="trip-count">{{ trips.length }} viajes</span>
-        </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Fecha</th>
-                <th scope="col">Ruta</th>
-                <th scope="col">Tipo</th>
-                <th scope="col">Salida</th>
-                <th scope="col">Llegada</th>
-                <th scope="col">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (trip of visibleTrips(); track trip.id) {
-                <tr
-                  class="trip-row"
-                  [class.selected]="selectedTrip()?.id === trip.id"
-                  [attr.aria-selected]="selectedTrip()?.id === trip.id"
-                  tabindex="0"
-                  (click)="selectTrip(trip)"
-                  (keydown.enter)="selectTrip(trip)"
-                  (keydown.space)="selectTrip(trip); $event.preventDefault()">
-                  <td data-label="Fecha"><strong>{{ trip.date }}</strong></td>
-                  <td data-label="Ruta">{{ trip.route }}</td>
-                  <td data-label="Tipo">{{ trip.direction }}</td>
-                  <td data-label="Salida">{{ trip.departure }}</td>
-                  <td data-label="Llegada">{{ trip.arrival }}</td>
-                  <td data-label="Estado"><span class="status" [class.delayed]="trip.status === 'Con retraso'" [class.missed]="trip.status === 'No abordado'" [class.complete]="trip.status === 'Completado'"><span></span>{{ trip.status }}</span></td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-
-        <footer class="pagination">
-          <span class="pagination-summary">Mostrando {{ (currentPage() - 1) * 6 + 1 }}–{{ (currentPage() - 1) * 6 + visibleTrips().length }} de {{ trips.length }} viajes</span>
-          <div class="pagination-controls" aria-label="Paginación">
-            <button type="button" class="page-button page-label" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
-              <mat-icon>chevron_left</mat-icon><span>Anterior</span>
-            </button>
-            @for (page of [1, 2]; track page) {
-              @if (page <= pageCount) {
-                <button type="button" class="page-button page-number" [class.current]="currentPage() === page" [attr.aria-current]="currentPage() === page ? 'page' : null" (click)="goToPage(page)">{{ page }}</button>
-              }
-            }
-            <button type="button" class="page-button page-label" [disabled]="currentPage() === pageCount" (click)="goToPage(currentPage() + 1)">
-              <span>Siguiente</span><mat-icon>chevron_right</mat-icon>
-            </button>
-          </div>
-        </footer>
+  @if (loading()) {
+    <section class="state-card"><mat-spinner diameter="42" /><h2>Cargando historial…</h2><p>Estamos consultando tus viajes registrados.</p></section>
+  } @else if (!trips().length && !errorMessage()) {
+    <section class="state-card empty"><span><mat-icon>history</mat-icon></span><h2>Todavía no tienes viajes registrados</h2><p>No existen abordajes dentro del periodo seleccionado.</p></section>
+  } @else if (trips().length) {
+    <div class="history-grid">
+      <section class="trip-list" aria-label="Viajes registrados">
+        <div class="list-heading"><h2>Viajes</h2><span>{{ trips().length }} {{ trips().length === 1 ? 'registro' : 'registros' }}</span></div>
+        @for (trip of trips(); track trip.tripId) {
+          <button type="button" class="trip-card" [class.selected]="selectedTripId() === trip.tripId" (click)="selectTrip(trip)">
+            <span class="date-tile"><strong>{{ trip.scheduledStartAt | date:'dd' }}</strong><small>{{ trip.scheduledStartAt | date:'MMM' }}</small></span>
+            <span class="trip-summary"><span class="route-code">{{ trip.routeCode }}</span><strong>{{ trip.routeName }}</strong><small>{{ trip.routeOrigin }} → {{ trip.routeDestination }}</small><em><mat-icon>where_to_vote</mat-icon>{{ trip.stopName }}</em></span>
+            <span class="trip-meta"><span class="status" [class.cancelled]="trip.tripStatus === 'CANCELLED'"><i></i>{{ tripStatusLabel(trip.tripStatus) }}</span><small>{{ trip.scheduledStartAt | date:'shortTime' }}</small>@if (trip.delayed) { <em>Con demora</em> }</span>
+          </button>
+        }
       </section>
 
-      <aside class="panel detail-panel" aria-labelledby="detail-heading">
-        <div class="panel-heading detail-heading">
-          <div>
-            <p class="eyebrow">INFORMACIÓN DEL VIAJE</p>
-            <h2 id="detail-heading">Detalle del recorrido</h2>
-          </div>
-        </div>
+      <aside class="detail-card" aria-labelledby="history-detail-title">
+        @if (detailLoading()) {
+          <div class="detail-state"><mat-spinner diameter="34" /><span>Cargando detalle…</span></div>
+        } @else if (detailError()) {
+          <div class="detail-state error"><mat-icon>error</mat-icon><p>{{ detailError() }}</p><button type="button" (click)="retryDetail()">Reintentar</button></div>
+        } @else if (detail(); as selected) {
+          <div class="detail-heading"><div><p class="eyebrow">Detalle del viaje</p><h2 id="history-detail-title">{{ selected.trip.routeCode }}</h2></div><span class="status"><i></i>{{ tripStatusLabel(selected.trip.tripStatus) }}</span></div>
+          <h3>{{ selected.trip.routeName }}</h3>
+          <p class="route-path">{{ selected.trip.routeOrigin }} <span>→</span> {{ selected.trip.routeDestination }}</p>
+          <div class="campus"><mat-icon>school</mat-icon><div><strong>{{ selected.trip.campusName }}</strong><small>{{ selected.trip.institutionName }}</small></div></div>
 
-        @if (selectedTrip(); as trip) {
-          <div class="route-title">
-            <div>
-              <h3>{{ trip.route }} <span aria-hidden="true">→</span><br />Universidad</h3>
-              <p>{{ trip.date }} <span aria-hidden="true">·</span> {{ trip.direction }}</p>
-            </div>
-            <span class="status" [class.delayed]="trip.status === 'Con retraso'" [class.missed]="trip.status === 'No abordado'" [class.complete]="trip.status === 'Completado'"><span></span>{{ trip.status }}</span>
-          </div>
+          <dl class="facts"><div><dt>Salida programada</dt><dd>{{ selected.trip.scheduledStartAt | date:'medium' }}</dd></div><div><dt>Llegada programada</dt><dd>{{ selected.trip.scheduledEndAt | date:'medium' }}</dd></div><div><dt>Salida real</dt><dd>{{ selected.trip.actualStartAt ? (selected.trip.actualStartAt | date:'medium') : 'No registrada' }}</dd></div><div><dt>Llegada real</dt><dd>{{ selected.trip.actualEndAt ? (selected.trip.actualEndAt | date:'medium') : 'No registrada' }}</dd></div></dl>
 
-          <div class="trip-facts">
-            <div class="fact"><span>Bus</span><strong>{{ trip.bus }}</strong></div>
-            <div class="fact"><span>Duración</span><strong>{{ trip.duration === null ? '—' : trip.duration + ' min' }}</strong></div>
-            <div class="fact"><span>Salida</span><strong>{{ trip.departure }}</strong></div>
-            <div class="fact"><span>Llegada</span><strong>{{ trip.arrival }}</strong></div>
-          </div>
+          <section class="boarding-detail"><mat-icon>verified</mat-icon><div><strong>{{ boardingStatusLabel(selected.trip.boardingStatus) }}</strong><span>{{ selected.trip.stopName }} · {{ selected.trip.boardedAt | date:'medium' }}</span></div></section>
 
-          <h3 class="stops-heading">Paradas del recorrido</h3>
-          <ol class="stop-list">
-            @for (stop of trip.stops; track $index; let last = $last) {
-              <li [class.last]="last">
-                <span class="stop-marker" aria-hidden="true"></span>
-                <span class="stop-name">{{ stop.name }}</span>
-                <time>{{ stop.time }}</time>
-              </li>
-            }
-          </ol>
+          <div class="resource-grid"><div><small>Vehículo</small><strong>{{ selected.vehiclePlate || 'No asignado' }}</strong><span>@if (selected.vehicleBrand || selected.vehicleModel) { {{ selected.vehicleBrand }} {{ selected.vehicleModel }} } @else { Sin datos adicionales }</span></div><div><small>Conductor</small><strong>{{ selected.driverName || 'No asignado' }}</strong><span>Información registrada para este viaje</span></div></div>
+
+          <section class="incidents"><h3>Incidencias</h3>@for (incident of selected.incidents; track incident.id) { <article><span class="incident-icon"><mat-icon>report_problem</mat-icon></span><div><strong>{{ incidentTypeLabel(incident.type) }}</strong><p>{{ incident.description || 'Sin descripción adicional.' }}</p><small>{{ incident.createdAt | date:'medium' }} · Prioridad {{ incidentPriorityLabel(incident.priority) }} · {{ incidentStatusLabel(incident.status) }}@if (incident.delayMinutes) { · {{ incident.delayMinutes }} min }</small></div></article> } @empty { <p class="no-incidents">Este viaje no registra incidencias.</p> }</section>
         }
       </aside>
     </div>
-
-    <p class="demo-note">Vista de demostración con viajes de ejemplo.</p>
-  </main>
+  }
 </div>
