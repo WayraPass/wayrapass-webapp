@@ -26,6 +26,7 @@ export interface CurrentTripDetails {
   actualEndAt: string | null;
   vehicle: TripVehicle | null;
   assignedStop: AssignedStop | null;
+  boarding: CurrentBoarding;
   location: TripLocationStatus | null;
   stopArrival: ArrivalEstimate | null;
   universityArrival: UniversityArrivalEstimate | null;
@@ -44,6 +45,12 @@ export interface AssignedStop {
   name: string;
   address: string | null;
   district: string | null;
+}
+
+export interface CurrentBoarding {
+  confirmed: boolean;
+  boardedAt: string | null;
+  stopName: string | null;
 }
 
 export interface TripLocationStatus {
@@ -120,6 +127,25 @@ export interface TripHistoryItem {
   stopId: number;
   stopName: string;
   delayed: boolean;
+}
+
+export interface UpcomingTrip {
+  tripId: number;
+  routeId: number;
+  routeCode: string;
+  routeName: string;
+  routeOrigin: string;
+  routeDestination: string;
+  institutionName: string;
+  campusName: string;
+  stopId: number;
+  stopName: string;
+  scheduledStartAt: string;
+  scheduledEndAt: string;
+  status: TripStatus;
+  resourcesReassigned: boolean;
+  studentRouteOrStopModified: boolean;
+  modificationMessage: string | null;
 }
 
 export interface TripIncident {

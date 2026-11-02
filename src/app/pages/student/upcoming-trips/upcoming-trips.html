@@ -1,0 +1,30 @@
+<div class="upcoming-page">
+  <header class="page-heading"><p class="eyebrow">Tu agenda de traslados</p><h1>Próximos viajes</h1><p>Consulta los viajes programados para tu inscripción actual.</p></header>
+
+  @if (loading()) {
+    <section class="state-card" aria-live="polite"><mat-spinner diameter="42" /><h2>Cargando próximos viajes…</h2></section>
+  } @else if (errorMessage()) {
+    <section class="state-card error" role="alert"><span><mat-icon>cloud_off</mat-icon></span><h2>No pudimos cargar tus viajes</h2><p>{{ errorMessage() }}</p><button type="button" (click)="load()"><mat-icon>refresh</mat-icon>Reintentar</button></section>
+  } @else if (trips().length) {
+    <section class="trip-list" aria-label="Viajes programados">
+      @for (trip of trips(); track trip.tripId) {
+        <article class="trip-card">
+          <header><div><span class="route-code">{{ trip.routeCode }}</span><h2>{{ trip.routeName }}</h2></div><span class="status">{{ statusLabel(trip.status) }}</span></header>
+          <p class="route-path">{{ trip.routeOrigin }} <mat-icon>arrow_forward</mat-icon> {{ trip.routeDestination }}</p>
+          <div class="trip-details">
+            <div><mat-icon>calendar_month</mat-icon><span><small>Fecha</small><strong>{{ dateLabel(trip.scheduledStartAt) }}</strong></span></div>
+            <div><mat-icon>schedule</mat-icon><span><small>Horario</small><strong>{{ timeLabel(trip.scheduledStartAt) }} – {{ timeLabel(trip.scheduledEndAt) }}</strong></span></div>
+            <div><mat-icon>where_to_vote</mat-icon><span><small>Tu paradero</small><strong>{{ trip.stopName }}</strong></span></div>
+            <div><mat-icon>school</mat-icon><span><small>Campus destino</small><strong>{{ trip.institutionName }} — {{ trip.campusName }}</strong></span></div>
+          </div>
+          @if (trip.studentRouteOrStopModified || trip.resourcesReassigned) { <div class="change-note"><mat-icon>info</mat-icon><span>@if (trip.studentRouteOrStopModified) { {{ trip.modificationMessage || 'La asignación de este viaje fue actualizada.' }} } @else { Los recursos asignados a este viaje fueron actualizados. }</span></div> }
+        </article>
+      }
+    </section>
+  } @else {
+    <section class="state-card empty">
+      <span><mat-icon>event_available</mat-icon></span>
+      <h2>No tienes próximos viajes programados</h2><p>Los nuevos viajes aparecerán aquí cuando sean programados para tu inscripción.</p><a routerLink="/student/enrollment"><mat-icon>assignment</mat-icon>Ver Mi inscripción</a>
+    </section>
+  }
+</div>

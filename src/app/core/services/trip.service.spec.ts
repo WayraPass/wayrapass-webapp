@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../environments/environment';
 import { TripService } from './trip.service';
 
-describe('TripService US03/US04/US08', () => {
+describe('TripService US03/US04/US08/US15', () => {
   let service: TripService;
   let http: HttpTestingController;
 
@@ -42,5 +42,13 @@ describe('TripService US03/US04/US08', () => {
     const request = http.expectOne(`${environment.apiUrl}/trips/me/history/31`);
     expect(request.request.method).toBe('GET');
     request.flush({ trip: null, driverId: null, driverName: null, vehicleId: null, vehiclePlate: null, vehicleBrand: null, vehicleModel: null, incidents: [] });
+  });
+
+  it('requests upcoming trips for the authenticated student without a student id', () => {
+    service.getUpcomingTrips().subscribe((trips) => expect(trips).toEqual([]));
+    const request = http.expectOne(`${environment.apiUrl}/trips/me/upcoming`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.keys()).toEqual([]);
+    request.flush([]);
   });
 });

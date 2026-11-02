@@ -8,6 +8,7 @@ import {
   CurrentTripResponse,
   StudentTripHistoryDetail,
   TripHistoryItem,
+  UpcomingTrip,
 } from '../models/trip.models';
 
 @Injectable({ providedIn: 'root' })
@@ -16,6 +17,10 @@ export class TripService {
 
   getCurrentTrip(): Observable<CurrentTripResponse> {
     return this.http.get<CurrentTripResponse>(`${environment.apiUrl}/trips/me/current`);
+  }
+
+  getUpcomingTrips(): Observable<UpcomingTrip[]> {
+    return this.http.get<UpcomingTrip[]>(`${environment.apiUrl}/trips/me/upcoming`);
   }
 
   getHistory(from: string, to: string): Observable<TripHistoryItem[]> {
@@ -49,6 +54,17 @@ export function historyErrorMessage(error: unknown): string {
     return apiMessage(error) ?? `No se pudo consultar el historial (error ${error.status}).`;
   }
   return 'No se pudo consultar el historial. Inténtalo nuevamente.';
+}
+
+export function upcomingTripsErrorMessage(error: unknown): string {
+  if (error instanceof HttpErrorResponse) {
+    if (error.status === 0) return 'No se pudo conectar con WayraPass. Verifica que el backend esté disponible.';
+    if (error.status === 401) return 'Tu sesión venció. Vuelve a iniciar sesión para consultar tus próximos viajes.';
+    if (error.status === 403) return 'Tu cuenta no tiene permiso para consultar estos viajes.';
+    if (error.status === 404) return 'La consulta de próximos viajes no está disponible en el backend actual.';
+    return apiMessage(error) ?? `No se pudieron consultar los próximos viajes (error ${error.status}).`;
+  }
+  return 'No se pudieron consultar los próximos viajes. Inténtalo nuevamente.';
 }
 
 function apiMessage(error: HttpErrorResponse): string | null {
