@@ -23,6 +23,11 @@ export interface AuthenticatedUser {
   fullName: string;
   phone: string | null;
   role: UserRole;
+  institutionId?: number | null;
+  institution?: {
+    id: number;
+    displayName: string;
+  } | null;
   enabled?: boolean;
   createdAt?: string;
   updatedAt?: string;

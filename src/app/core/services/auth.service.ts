@@ -15,6 +15,7 @@ import {
 
 const TOKEN_KEY = 'wayrapass.auth.token';
 const USER_KEY = 'wayrapass.auth.user';
+const STUDENT_INSTITUTION_PREFIX = 'wayrapass.student.institution.';
 
 export const DEMO_PASSWORD = 'WayraDemo123!';
 
@@ -39,7 +40,23 @@ export class AuthService {
   }
 
   register(request: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/register`, request);
+    return this.http.post<AuthResponse>(`${this.baseUrl}/register`, request).pipe(
+      tap(() => {
+        if (request.role === 'STUDENT' && request.institutionId) {
+          localStorageSafe()?.setItem(this.studentInstitutionKey(request.email), String(request.institutionId));
+        }
+      }),
+    );
+  }
+
+  preferredStudentInstitutionId(): number | null {
+    const user = this._user();
+    if (user?.institutionId && user.institutionId > 0) return user.institutionId;
+    const email = user?.email;
+    if (!email) return null;
+    const raw = localStorageSafe()?.getItem(this.studentInstitutionKey(email));
+    const id = raw ? Number(raw) : Number.NaN;
+    return Number.isInteger(id) && id > 0 ? id : null;
   }
 
   requestPasswordReset(email: string): Observable<PasswordResetResponse> {
@@ -116,6 +133,10 @@ export class AuthService {
     const raw = this.readStoredValue(USER_KEY);
     if (!raw) return null;
     try { return JSON.parse(raw) as AuthenticatedUser; } catch { return null; }
+  }
+
+  private studentInstitutionKey(email: string): string {
+    return `${STUDENT_INSTITUTION_PREFIX}${email.trim().toLowerCase()}`;
   }
 }
 

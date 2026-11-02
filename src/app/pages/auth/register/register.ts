@@ -7,6 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService, authErrorMessage } from '../../../core/services/auth.service';
 import { SelfRegistrationRole } from '../../../core/models/auth.models';
+import { InstitutionCatalog } from '../../../core/models/route.models';
+import { RouteService, routeErrorMessage } from '../../../core/services/route.service';
 
 const passwordsMatch: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const password = control.get('password')?.value;
@@ -24,6 +26,7 @@ const passwordsMatch: ValidatorFn = (control: AbstractControl): ValidationErrors
 export class Register {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly routes = inject(RouteService);
   private readonly router = inject(Router);
 
   readonly loading = signal(false);
@@ -31,6 +34,9 @@ export class Register {
   readonly showConfirmPassword = signal(false);
   readonly errorMessage = signal('');
   readonly selectedRole = signal<SelfRegistrationRole>('STUDENT');
+  readonly institutions = signal<InstitutionCatalog[]>([]);
+  readonly institutionsLoading = signal(false);
+  readonly institutionsError = signal('');
 
   readonly form = this.fb.nonNullable.group({
     firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
@@ -43,11 +49,29 @@ export class Register {
     confirmPassword: ['', Validators.required],
   }, { validators: passwordsMatch });
 
+  constructor() {
+    this.loadInstitutions();
+  }
+
+  loadInstitutions(): void {
+    if (this.institutionsLoading()) return;
+    this.institutionsLoading.set(true);
+    this.institutionsError.set('');
+    this.routes.getPublicInstitutions().pipe(
+      finalize(() => this.institutionsLoading.set(false)),
+    ).subscribe({
+      next: (institutions) => this.institutions.set([...institutions].sort((a, b) =>
+        a.displayName.localeCompare(b.displayName, 'es', { sensitivity: 'base' }))),
+      error: (error: unknown) => this.institutionsError.set(routeErrorMessage(error)),
+    });
+  }
+
   selectRole(role: SelfRegistrationRole): void {
     this.selectedRole.set(role);
     const institutionId = this.form.controls.institutionId;
     if (role === 'STUDENT') {
       institutionId.setValidators([Validators.required, Validators.min(1)]);
+      if (!this.institutions().length && !this.institutionsLoading()) this.loadInstitutions();
     } else {
       institutionId.clearValidators();
       institutionId.setValue(0);
@@ -57,7 +81,7 @@ export class Register {
 
   submit(): void {
     this.errorMessage.set('');
-    if (this.form.invalid) {
+    if (this.form.invalid || (this.selectedRole() === 'STUDENT' && !this.institutions().length)) {
       this.form.markAllAsTouched();
       return;
     }

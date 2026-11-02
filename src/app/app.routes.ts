@@ -17,6 +17,12 @@ export const routes: Routes = [
   { path: 'forgot-password', component: ForgotPassword },
   { path: 'reset-password', component: ResetPassword },
   { path: 'student/dashboard', component: StudentDashboard, canActivate: [authGuard, roleGuard('STUDENT')] },
+  {
+    path: 'student/routes',
+    loadComponent: () => import('./pages/student/route-search/route-search').then((m) => m.StudentRouteSearch),
+    canActivate: [authGuard, roleGuard('STUDENT')],
+    title: 'Buscar rutas · WayraPass',
+  },
   { path: 'family/dashboard', component: FamilyDashboard, canActivate: [authGuard, roleGuard('FAMILY')] },
   { path: 'driver/dashboard', component: DriverDashboard, canActivate: [authGuard, roleGuard('DRIVER')] },
   { path: 'coordinator/dashboard', component: CoordinatorDashboard, canActivate: [authGuard, roleGuard('COORDINATOR')] },

@@ -50,8 +50,11 @@
 
         @if (selectedRole() === 'STUDENT') {
           <div class="field-grid">
-            <div><label class="field-label" for="institution-id">ID de institución</label><div class="input-shell" [class.invalid]="form.controls.institutionId.invalid && form.controls.institutionId.touched"><input id="institution-id" type="number" min="1" formControlName="institutionId" /></div>
-              @if (form.controls.institutionId.invalid && form.controls.institutionId.touched) { <p class="field-error">Ingresa el ID de una institución existente.</p> }</div>
+            <div><label class="field-label" for="institution-id">Institución / campus</label><div class="input-shell select-shell" [class.invalid]="form.controls.institutionId.invalid && form.controls.institutionId.touched"><select id="institution-id" formControlName="institutionId" [disabled]="institutionsLoading()"><option [ngValue]="0">Selecciona una institución</option>@for (institution of institutions(); track institution.id) { <option [ngValue]="institution.id">{{ institution.displayName }}</option> }</select></div>
+              @if (institutionsLoading()) { <p class="field-help">Cargando instituciones y campus…</p> }
+              @else if (institutionsError()) { <p class="field-error">{{ institutionsError() }} <button type="button" class="inline-retry" (click)="loadInstitutions()">Reintentar</button></p> }
+              @else if (!institutions().length) { <p class="field-error">No hay instituciones disponibles actualmente.</p> }
+              @else if (form.controls.institutionId.invalid && form.controls.institutionId.touched) { <p class="field-error">Selecciona tu institución y campus.</p> }</div>
             <div><label class="field-label" for="student-code">Código estudiantil (opcional)</label><div class="input-shell"><input id="student-code" formControlName="studentCode" maxlength="40" /></div></div>
           </div>
         }
@@ -67,7 +70,7 @@
         @else if (form.hasError('passwordMismatch') && form.controls.confirmPassword.touched) { <p class="field-error">Las contraseñas no coinciden.</p> }
 
         <p class="role-notice registration-notice"><strong>Sin registro público:</strong> las cuentas de chofer y coordinador deben ser habilitadas por administración.</p>
-        <button mat-flat-button class="primary-button" type="submit" [disabled]="loading()">@if (loading()) { <mat-spinner diameter="20" /> } @else { Crear cuenta de {{ selectedRole() === 'STUDENT' ? 'Estudiante' : 'Familiar' }} }</button>
+        <button mat-flat-button class="primary-button" type="submit" [disabled]="loading() || (selectedRole() === 'STUDENT' && institutionsLoading())">@if (loading()) { <mat-spinner diameter="20" /> } @else { Crear cuenta de {{ selectedRole() === 'STUDENT' ? 'Estudiante' : 'Familiar' }} }</button>
       </form>
       <p class="auth-switch">¿Ya tienes una cuenta? <a routerLink="/login">Iniciar sesión</a></p>
     </section>

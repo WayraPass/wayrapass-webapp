@@ -1,0 +1,105 @@
+<div class="student-routes-page">
+  <header class="student-header">
+    <a class="brand" routerLink="/student/dashboard" aria-label="WayraPass, inicio del estudiante">
+      <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
+    </a>
+    <div class="user-actions">
+      <span class="role-chip">Estudiante</span>
+      <button type="button" class="logout-button" (click)="logout()"><mat-icon>logout</mat-icon>Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="routes-main">
+    <nav class="breadcrumb"><a routerLink="/student/dashboard">Inicio</a><mat-icon>chevron_right</mat-icon><span>Buscar rutas</span></nav>
+
+    <section class="page-heading">
+      <div><p class="eyebrow">US02 · Rutas disponibles</p><h1>Buscar y guardar rutas</h1><p>Elige tu campus, punto de partida y horario de recojo.</p></div>
+      <div class="student-name"><span>Sesión de</span><strong>{{ user()?.fullName }}</strong></div>
+    </section>
+
+    @if (errorMessage()) { <div class="form-alert error" role="alert"><mat-icon>error</mat-icon><span>{{ errorMessage() }}</span></div> }
+    @if (successMessage()) { <div class="form-alert success" role="status"><mat-icon>check_circle</mat-icon><span>{{ successMessage() }}</span></div> }
+
+    <section class="search-card" aria-labelledby="filters-title">
+      <div class="section-heading"><div><h2 id="filters-title">Filtros de búsqueda</h2><p>Los catálogos se cargan directamente desde WayraPass.</p></div><mat-icon>tune</mat-icon></div>
+
+      @if (catalogError()) {
+        <div class="catalog-state error" role="alert"><span>{{ catalogError() }}</span><button type="button" (click)="loadCatalogs()">Reintentar</button></div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="search()" novalidate>
+        <div class="filter-grid">
+          <label><span>Campus destino</span><select formControlName="institutionId" [disabled]="catalogsLoading()"><option [ngValue]="0">Todos los campus</option>@for (institution of institutions(); track institution.id) { <option [ngValue]="institution.id">{{ institution.displayName }}</option> }</select></label>
+          <label><span>Distrito de partida</span><select formControlName="district" [disabled]="catalogsLoading()"><option value="">Todos los distritos</option>@for (district of districts(); track district) { <option [value]="district">{{ district }}</option> }</select></label>
+          <label><span>Paradero</span><select formControlName="stopId" [disabled]="!form.controls.district.value || pickupsLoading()"><option [ngValue]="0">{{ form.controls.district.value ? 'Todos los paraderos' : 'Elige primero un distrito' }}</option>@for (pickup of pickups(); track pickup.id) { <option [ngValue]="pickup.id">{{ pickup.name }}</option> }</select>
+            @if (pickupsLoading()) { <small class="field-hint">Cargando paraderos…</small> }
+            @else if (pickupError()) { <small class="field-error">{{ pickupError() }}</small> }
+            @else if (form.controls.district.value && !pickups().length) { <small class="field-hint">No hay paraderos disponibles.</small> }
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="secondary-button" (click)="clearFilters()" [disabled]="loading()">Limpiar</button>
+          <button type="submit" class="primary-action" [disabled]="loading() || catalogsLoading()">@if (loading()) { <mat-spinner diameter="20" /> } @else { <mat-icon>search</mat-icon>Buscar rutas }</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="favorites-section" aria-labelledby="favorites-title">
+      <div class="section-heading"><div><h2 id="favorites-title">Mis rutas favoritas</h2><p>Se guardan en tu cuenta y permanecen disponibles al volver a ingresar.</p></div><span class="count-chip">{{ favorites().length }}</span></div>
+      @if (favoritesLoading()) {
+        <div class="inline-loading"><mat-spinner diameter="28" /></div>
+      } @else {
+        <div class="favorite-list">
+          @for (favorite of favorites(); track favorite.routeId) {
+            <article class="favorite-item" [class.unavailable]="!favorite.available">
+              <span class="favorite-icon"><mat-icon>star</mat-icon></span>
+              <div><strong>{{ favorite.routeCode }}</strong><span>{{ favorite.routeName }}</span><small>{{ favoriteCampus(favorite.routeId) }} · {{ favorite.available ? 'Disponible' : 'Temporalmente no disponible' }}</small></div>
+              <button type="button" (click)="removeFavorite(favorite)" [disabled]="isPending(favorite.routeId)" [attr.aria-label]="'Quitar ' + favorite.routeCode + ' de favoritos'"><mat-icon>close</mat-icon></button>
+            </article>
+          } @empty {
+            <p class="empty-inline">Todavía no guardaste rutas favoritas.</p>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="results-section" aria-labelledby="results-title">
+      <div class="section-heading"><div><h2 id="results-title">Resultados</h2><p>{{ resultLabel() }}</p></div></div>
+      @if (loading()) {
+        <div class="results-loading"><mat-spinner diameter="38" /><span>Consultando rutas disponibles…</span></div>
+      } @else {
+        <div class="route-grid">
+          @for (route of results(); track route.routeId) {
+            <article class="route-card">
+              <header><div><span class="route-code">{{ route.routeCode }}</span><h3>{{ route.routeName }}</h3></div>
+                <button type="button" class="favorite-button" [class.active]="route.favorite" [disabled]="isPending(route.routeId)" (click)="toggleFavorite(route)" [attr.aria-label]="route.favorite ? 'Quitar ruta de favoritos' : 'Guardar ruta como favorita'">
+                  @if (isPending(route.routeId)) { <mat-spinner diameter="20" /> } @else { <mat-icon>{{ route.favorite ? 'star' : 'star_border' }}</mat-icon> }
+                </button>
+              </header>
+              <p class="route-path"><mat-icon>alt_route</mat-icon>{{ route.origin }} <span>→</span> {{ route.destination }}</p>
+              <div class="institution"><mat-icon>school</mat-icon><span><strong>{{ route.institution.displayName }}</strong><small>Campus destino · {{ route.institution.district || 'Distrito no registrado' }}</small></span></div>
+
+              <div class="route-stops" aria-label="Recorrido de la ruta">
+                @for (stop of route.stops; track stop.id; let last = $last) {
+                  <div class="stop-card" [class.destination-stop]="last"><span class="stop-order">{{ stop.sequence }}</span><div><strong>{{ stop.name }}</strong><small>{{ stop.address || 'Dirección no registrada' }}@if (stop.district) { · {{ stop.district }} }</small></div>@if (last) { <span class="destination-label">Destino</span> }</div>
+                }
+              </div>
+
+              <details class="schedule-details">
+                <summary><mat-icon>schedule</mat-icon>Ver {{ route.schedules.length }} horarios disponibles</summary>
+                <div class="schedule-groups">
+                  @for (group of scheduleGroups(route.schedules); track group.day) {
+                    <section><h4>{{ dayLabel(group.day) }}</h4><div class="schedule-times">@for (schedule of group.schedules; track schedule.id) { <span><strong>{{ shortTime(schedule.departureTime) }}</strong> → {{ shortTime(schedule.estimatedArrivalTime) }}</span> }</div></section>
+                  } @empty { <p>No hay horarios activos para esta ruta.</p> }
+                </div>
+              </details>
+            </article>
+          } @empty {
+            <div class="empty-results"><mat-icon>route</mat-icon><h3>No encontramos rutas disponibles</h3><p>Prueba cambiando el campus, distrito, paradero u hora de recojo.</p></div>
+          }
+        </div>
+      }
+    </section>
+  </main>
+</div>
