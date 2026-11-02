@@ -13,5 +13,5 @@
 }
 
 .select-shell select:disabled { cursor: wait; opacity: .7; }
-.field-help { margin: 6px 2px 0; color: var(--wp-gray-dark); font-size: 12px; }
-.inline-retry { padding: 0; color: var(--wp-metal-blue); border: 0; background: transparent; font-weight: 700; cursor: pointer; }
+.field-help { margin: 6px 2px 0; color: #687482; font-size: 12px; }
+.inline-retry { padding: 0; color: #17607e; border: 0; background: transparent; font-weight: 700; cursor: pointer; }
