@@ -1,9 +1,9 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiErrorResponse } from '../models/auth.models';
-import { DriverAdmin, DriverRequest, InstitutionAdmin, RouteAdmin, RouteRequest, RouteScheduleAdmin, RouteStopAdmin, RouteStopRequest, StopAdmin, StopRequest, VehicleAdmin, VehicleRequest } from '../models/coordinator.models';
+import { CoordinatorTrip, DriverAdmin, DriverRequest, InstitutionAdmin, OperationalReport, ReassignmentOptions, ReportFormat, ReportIndicator, RouteAdmin, RouteRequest, RouteScheduleAdmin, RouteStopAdmin, RouteStopRequest, StopAdmin, StopRequest, TripAssignmentRequest, TripCreateRequest, TripReassignmentRequest, VehicleAdmin, VehicleRequest, WeeklyOperation } from '../models/coordinator.models';
 
 @Injectable({ providedIn: 'root' })
 export class CoordinatorService {
@@ -29,6 +29,30 @@ export class CoordinatorService {
   vehicles(): Observable<VehicleAdmin[]> { return this.http.get<VehicleAdmin[]>(`${this.api}/vehicles`); }
   createVehicle(request: VehicleRequest): Observable<VehicleAdmin> { return this.http.post<VehicleAdmin>(`${this.api}/vehicles`, request); }
   updateVehicle(id: number, request: VehicleRequest): Observable<VehicleAdmin> { return this.http.put<VehicleAdmin>(`${this.api}/vehicles/${id}`, request); }
+
+  trips(): Observable<CoordinatorTrip[]> { return this.http.get<CoordinatorTrip[]>(`${this.api}/trips`); }
+  createTrip(request: TripCreateRequest): Observable<CoordinatorTrip> { return this.http.post<CoordinatorTrip>(`${this.api}/trips`, request); }
+  assignTripResources(id: number, request: TripAssignmentRequest): Observable<CoordinatorTrip> { return this.http.put<CoordinatorTrip>(`${this.api}/trips/${id}/assignment`, request); }
+  reassignmentOptions(id: number): Observable<ReassignmentOptions> { return this.http.get<ReassignmentOptions>(`${this.api}/trips/${id}/reassignment-options`); }
+  reassignTripResources(id: number, request: TripReassignmentRequest): Observable<CoordinatorTrip> { return this.http.put<CoordinatorTrip>(`${this.api}/trips/${id}/reassignment`, request); }
+  weeklyCalendar(from: string, to: string): Observable<WeeklyOperation[]> {
+    const params = new HttpParams().set('from', from).set('to', to);
+    return this.http.get<WeeklyOperation[]>(`${this.api}/trips/calendar`, { params });
+  }
+
+  operationalReport(from: string, to: string, indicator: ReportIndicator): Observable<OperationalReport> {
+    const params = this.reportParams(from, to, indicator);
+    return this.http.get<OperationalReport>(`${this.api}/reports/operations`, { params });
+  }
+
+  exportOperationalReport(from: string, to: string, indicator: ReportIndicator, format: ReportFormat): Observable<HttpResponse<Blob>> {
+    const params = this.reportParams(from, to, indicator).set('format', format);
+    return this.http.get(`${this.api}/reports/operations/export`, { params, responseType: 'blob', observe: 'response' });
+  }
+
+  private reportParams(from: string, to: string, indicator: ReportIndicator): HttpParams {
+    return new HttpParams().set('from', from).set('to', to).set('indicator', indicator);
+  }
 }
 
 export function coordinatorErrorMessage(error: unknown): string {

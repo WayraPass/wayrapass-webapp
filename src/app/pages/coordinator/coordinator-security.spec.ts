@@ -23,7 +23,7 @@ describe('Coordinator C3 security and navigation', () => {
   it('protects all C3 pages at the COORDINATOR parent route', () => {
     const coordinator = routes.find((route) => route.path === 'coordinator');
     expect(coordinator?.canActivate).toHaveLength(2);
-    expect(coordinator?.children?.map((route) => route.path)).toEqual(expect.arrayContaining(['dashboard', 'routes', 'stops', 'drivers', 'vehicles']));
+    expect(coordinator?.children?.map((route) => route.path)).toEqual(expect.arrayContaining(['dashboard', 'routes', 'stops', 'drivers', 'vehicles', 'assignments', 'calendar', 'reports']));
   });
   it.each(['STUDENT', 'FAMILY', 'DRIVER'] as UserRole[])('blocks the %s role from coordinator pages', async (role) => {
     auth.user.set(user(role));
@@ -33,10 +33,10 @@ describe('Coordinator C3 security and navigation', () => {
     const resolved = await firstValueFrom(result as Observable<boolean | UrlTree>);
     expect(resolved).not.toBe(true);
   });
-  it('shows only the C3 navigation and no future operational modules', () => {
+  it('adds the D1/D2/D3 coordinator navigation', () => {
     const fixture = TestBed.createComponent(CoordinatorLayout); fixture.detectChanges(); const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Rutas y paraderos'); expect(text).toContain('Conductores'); expect(text).toContain('Vehículos');
-    expect(text).not.toContain('Asignaciones'); expect(text).not.toContain('Reportes');
+    expect(text).toContain('Asignaciones'); expect(text).toContain('Calendario'); expect(text).toContain('Reportes');
   });
 });
 

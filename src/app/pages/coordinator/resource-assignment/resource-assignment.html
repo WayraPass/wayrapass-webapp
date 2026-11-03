@@ -1,0 +1,109 @@
+<header class="wp-page-header no-tabs">
+  <div class="wp-page-header__row"><div><h1>Asignación de recursos</h1><p>Asigna recursos iniciales o reemplázalos ante un imprevisto operativo.</p></div></div>
+</header>
+
+<div class="wp-page-body assignments-page">
+  @if (notice()) { <div class="wp-alert wp-alert--success" role="status"><mat-icon>check_circle</mat-icon>{{ notice() }}</div> }
+  @if (errorMessage()) {
+    <div class="wp-alert wp-alert--error" role="alert"><mat-icon>error</mat-icon><span>{{ errorMessage() }}</span><button class="wp-btn wp-btn--secondary wp-btn--sm" type="button" (click)="load()">Reintentar</button></div>
+  }
+  @if (loading()) {
+    <div class="wp-card wp-empty"><mat-spinner diameter="36" /><p>Cargando viajes y recursos…</p></div>
+  } @else if (!errorMessage()) {
+    @if (manageableTrips().length === 0) {
+      <div class="wp-card wp-empty"><mat-icon>event_available</mat-icon><strong>No hay viajes operativos para gestionar</strong><p>Los viajes programados o en curso aparecerán aquí.</p></div>
+    } @else {
+      <div class="trip-list">
+        @for (trip of manageableTrips(); track trip.id) {
+          <article class="wp-card trip-card" [class.trip-card--selected]="selectedTrip()?.id === trip.id || reassignmentTrip()?.id === trip.id">
+            <div class="trip-heading">
+              <div>
+                <span class="eyebrow">{{ routeFor(trip)?.code || 'Viaje operativo' }} · {{ statusLabel(trip.status) }}</span>
+                <h2>{{ routeFor(trip)?.name || 'Ruta ' + trip.routeId }}</h2>
+                <p>{{ routeFor(trip)?.origin || 'Origen no disponible' }} <mat-icon aria-hidden="true">arrow_forward</mat-icon> {{ routeFor(trip)?.destination || 'Destino no disponible' }}</p>
+              </div>
+              <div class="state-group"><span class="assignment-state" [class.assignment-state--ready]="canAssign(trip)" [class.assignment-state--blocked]="!canAssign(trip)">{{ canAssign(trip) ? 'Sin asignación' : hasCompleteAssignment(trip) ? 'Asignado' : 'Asignación incompleta' }}</span>@if (trip.wasReassigned) { <span class="reassigned-state">Reasignado</span> }</div>
+            </div>
+            <div class="trip-data">
+              <span><mat-icon>schedule</mat-icon><strong>Salida</strong>{{ formatDate(trip.scheduledStartAt) }}</span>
+              <span><mat-icon>badge</mat-icon><strong>Conductor</strong>{{ driverName(trip.driverId) }}</span>
+              <span><mat-icon>directions_bus</mat-icon><strong>Vehículo</strong>{{ vehicleName(trip.vehicleId) }}</span>
+            </div>
+            @if (canAssign(trip)) {
+              <button class="wp-btn wp-btn--primary" type="button" (click)="openAssignment(trip)">Asignar recursos</button>
+            } @else if (canReassign(trip)) {
+              <div class="trip-actions"><p class="locked-note"><mat-icon>check_circle</mat-icon>{{ hasCompleteAssignment(trip) ? 'La asignación inicial ya fue realizada.' : 'El viaje tiene una asignación incompleta.' }}</p><button class="wp-btn wp-btn--secondary" type="button" (click)="openReassignment(trip)">Reasignar</button></div>
+            }
+
+            @if (selectedTrip()?.id === trip.id) {
+              <form class="assignment-form" [formGroup]="form" (ngSubmit)="reviewAssignment()">
+                <h3>Selecciona los recursos</h3>
+                @if (assignmentError()) { <div class="wp-alert wp-alert--error" role="alert"><mat-icon>error</mat-icon>{{ assignmentError() }}</div> }
+                <div class="resource-fields">
+                  <label class="wp-field"><span class="wp-label">Conductor *</span>
+                    <select class="wp-input" formControlName="driverId"><option [ngValue]="null">Selecciona un conductor</option>@for (driver of eligibleDrivers(); track driver.id) { <option [ngValue]="driver.id">{{ driver.fullName }} — {{ driver.licenseNumber }} — Disponible</option> }</select>
+                    @if (eligibleDrivers().length === 0) { <small class="wp-field-error">No hay conductores autorizados, disponibles y con licencia vigente.</small> }
+                  </label>
+                  <label class="wp-field"><span class="wp-label">Vehículo *</span>
+                    <select class="wp-input" formControlName="vehicleId"><option [ngValue]="null">Selecciona un vehículo</option>@for (vehicle of eligibleVehicles(); track vehicle.id) { <option [ngValue]="vehicle.id">{{ vehicle.plate }} — {{ vehicle.brand || 'Sin marca' }} {{ vehicle.model || '' }} — {{ vehicle.capacity }} pasajeros</option> }</select>
+                    @if (eligibleVehicles().length === 0) { <small class="wp-field-error">No hay vehículos autorizados y disponibles.</small> }
+                  </label>
+                </div>
+                <div class="form-actions"><button class="wp-btn wp-btn--secondary" type="button" (click)="closeAssignment()">Cancelar</button><button class="wp-btn wp-btn--primary" type="submit" [disabled]="form.invalid || eligibleDrivers().length === 0 || eligibleVehicles().length === 0">Revisar asignación</button></div>
+              </form>
+            }
+
+            @if (reassignmentTrip()?.id === trip.id) {
+              <form class="assignment-form" [formGroup]="reassignmentForm" (ngSubmit)="reviewReassignment()">
+                <div><h3>Reasignar recursos</h3><p class="form-help">Selecciona solo lo que deseas cambiar. El recurso actual se conservará si dejas su campo vacío.</p></div>
+                @if (reassignmentError()) { <div class="wp-alert wp-alert--error" role="alert"><mat-icon>error</mat-icon>{{ reassignmentError() }}</div> }
+                @if (optionsLoading()) {
+                  <div class="options-loading"><mat-spinner diameter="28" />Buscando alternativas disponibles…</div>
+                } @else if (reassignmentOptions(); as options) {
+                  <div class="resource-fields">
+                    <label class="wp-field"><span class="wp-label">Nuevo conductor</span>
+                      <select class="wp-input" formControlName="driverId"><option [ngValue]="null">Conservar {{ driverName(trip.driverId) }}</option>@for (driver of options.drivers; track driver.driverId) { <option [ngValue]="driver.driverId">{{ driver.fullName }} — {{ driver.licenseNumber }} — Disponible</option> }</select>
+                      @if (options.drivers.length === 0) { <small class="field-note">No hay otro conductor disponible para este horario.</small> }
+                    </label>
+                    <label class="wp-field"><span class="wp-label">Nuevo vehículo</span>
+                      <select class="wp-input" formControlName="vehicleId"><option [ngValue]="null">Conservar {{ vehicleName(trip.vehicleId) }}</option>@for (vehicle of options.vehicles; track vehicle.vehicleId) { <option [ngValue]="vehicle.vehicleId">{{ vehicle.plate }} — {{ vehicle.brand || 'Sin marca' }} {{ vehicle.model || '' }} — {{ vehicle.capacity }} pasajeros</option> }</select>
+                      @if (options.vehicles.length === 0) { <small class="field-note">No hay otro vehículo disponible para este horario.</small> }
+                    </label>
+                  </div>
+                  @if (options.message) { <p class="options-message">{{ options.message }}</p> }
+                  <div class="form-actions"><button class="wp-btn wp-btn--secondary" type="button" (click)="closeReassignment()">Cancelar</button><button class="wp-btn wp-btn--primary" type="submit" [disabled]="!hasReassignmentSelection()">Revisar reasignación</button></div>
+                }
+              </form>
+            }
+          </article>
+        }
+      </div>
+    }
+  }
+</div>
+
+@if (confirmationOpen() && selectedTrip(); as trip) {
+  <div class="modal" role="presentation"><section class="wp-card dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <h2 id="confirm-title">Confirmar asignación</h2><p>Revisa los recursos antes de confirmar.</p>
+    <dl class="summary">
+      <div><dt>Viaje</dt><dd><strong>{{ routeFor(trip)?.origin || 'Origen' }} → {{ routeFor(trip)?.destination || 'Destino' }}</strong><span>{{ formatDate(trip.scheduledStartAt) }}</span></dd></div>
+      <div><dt>Conductor</dt><dd>{{ selectedDriver()?.fullName }}<span>{{ selectedDriver()?.licenseNumber }}</span></dd></div>
+      <div><dt>Vehículo</dt><dd>{{ selectedVehicle()?.plate }}<span>{{ selectedVehicle()?.brand }} {{ selectedVehicle()?.model }}</span></dd></div>
+    </dl>
+    <div class="form-actions"><button class="wp-btn wp-btn--secondary" type="button" [disabled]="saving()" (click)="confirmationOpen.set(false)">Cancelar</button><button class="wp-btn wp-btn--primary" type="button" [disabled]="saving()" (click)="confirmAssignment()">{{ saving() ? 'Asignando…' : 'Confirmar asignación' }}</button></div>
+  </section></div>
+}
+
+@if (reassignmentConfirmationOpen() && reassignmentTrip(); as trip) {
+  <div class="modal" role="presentation"><section class="wp-card dialog" role="dialog" aria-modal="true" aria-labelledby="reassign-confirm-title">
+    <h2 id="reassign-confirm-title">Confirmar reasignación</h2><p>Comprueba la asignación actual y los cambios solicitados.</p>
+    <dl class="summary">
+      <div><dt>Viaje</dt><dd><strong>{{ routeFor(trip)?.name || 'Ruta ' + trip.routeId }}</strong><span>{{ formatDate(trip.scheduledStartAt) }}</span></dd></div>
+      <div><dt>Conductor actual</dt><dd>{{ driverName(trip.driverId) }}</dd></div>
+      <div><dt>Nuevo conductor</dt><dd>{{ selectedReplacementDriver()?.fullName || 'Sin cambios' }}</dd></div>
+      <div><dt>Vehículo actual</dt><dd>{{ vehicleName(trip.vehicleId) }}</dd></div>
+      <div><dt>Nuevo vehículo</dt><dd>{{ selectedReplacementVehicle()?.plate || 'Sin cambios' }}</dd></div>
+    </dl>
+    <div class="form-actions"><button class="wp-btn wp-btn--secondary" type="button" [disabled]="saving()" (click)="reassignmentConfirmationOpen.set(false)">Cancelar</button><button class="wp-btn wp-btn--primary" type="button" [disabled]="saving()" (click)="confirmReassignment()">{{ saving() ? 'Reasignando…' : 'Confirmar reasignación' }}</button></div>
+  </section></div>
+}
