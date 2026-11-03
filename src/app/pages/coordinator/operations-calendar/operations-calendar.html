@@ -1,0 +1,54 @@
+<header class="wp-page-header no-tabs"><div class="wp-page-header__row"><div><h1>Calendario de operaciones</h1><p>Consulta la programación semanal y los recursos asignados a cada viaje.</p></div><button class="wp-btn wp-btn--primary" type="button" (click)="openCreate()"><mat-icon>add</mat-icon>Nuevo viaje</button></div></header>
+
+<div class="wp-page-body calendar-page">
+  @if (notice()) { <div class="wp-alert wp-alert--success" role="status"><mat-icon>check_circle</mat-icon><span>{{ notice() }}</span></div> }
+  <section class="wp-card calendar-toolbar" aria-label="Navegación semanal">
+    <button class="wp-btn wp-btn--secondary" type="button" (click)="previousWeek()"><mat-icon>chevron_left</mat-icon>Semana anterior</button>
+    <div><span>Periodo</span><strong>{{ periodLabel() }}</strong></div>
+    <div class="toolbar-actions"><button class="wp-btn wp-btn--subtle" type="button" (click)="currentWeek()">Semana actual</button><button class="wp-btn wp-btn--secondary" type="button" (click)="nextWeek()">Semana siguiente<mat-icon>chevron_right</mat-icon></button></div>
+  </section>
+
+  @if (errorMessage()) { <div class="wp-alert wp-alert--error" role="alert"><mat-icon>error</mat-icon><span>{{ errorMessage() }}</span><button class="wp-btn wp-btn--secondary wp-btn--sm" type="button" (click)="load()">Reintentar</button></div> }
+  @if (loading()) {
+    <div class="wp-card wp-empty"><mat-spinner diameter="36" /><p>Cargando operaciones de la semana…</p></div>
+  } @else if (!errorMessage()) {
+    @if (operations().length === 0) { <div class="wp-card wp-empty"><mat-icon>event_busy</mat-icon><strong>No hay operaciones programadas esta semana</strong><p>Prueba con la semana anterior o siguiente.</p></div> }
+    <div class="week-grid">
+      @for (day of days(); track day.date) {
+        <section class="day-card" [class.day-card--empty]="day.operations.length === 0">
+          <header><div><span>{{ day.weekday }}</span><strong>{{ day.dayLabel }}</strong></div><small>{{ day.operations.length }} {{ day.operations.length === 1 ? 'viaje' : 'viajes' }}</small></header>
+          <div class="day-operations">
+            @for (operation of day.operations; track operation.tripId) {
+              <article class="operation">
+                <div class="operation-heading"><div><strong>{{ time(operation.scheduledStartAt) }}</strong><span>{{ operation.routeCode }}</span></div><span [class]="'trip-status ' + statusClass(operation.status)">{{ statusLabel(operation.status) }}</span></div>
+                <h2>{{ operation.routeName }}</h2><p class="journey">{{ operation.origin }} <mat-icon>arrow_forward</mat-icon> {{ operation.destination }}</p>
+                <dl><div><dt>Conductor</dt><dd>{{ operation.driver?.fullName || 'Sin conductor asignado' }}</dd></div><div><dt>Vehículo</dt><dd>{{ operation.vehicle?.plate || 'Sin vehículo asignado' }}</dd></div></dl>
+                @if (operation.modified) { <p class="modified"><mat-icon>swap_horiz</mat-icon>{{ operation.modificationMessage || 'La asignación fue modificada.' }}</p> }
+              </article>
+            } @empty { <p class="no-day-trips">Sin viajes</p> }
+          </div>
+        </section>
+      }
+    </div>
+  }
+</div>
+
+@if (createOpen()) {
+  <div class="modal" role="presentation"><form class="wp-card dialog" role="dialog" aria-modal="true" aria-labelledby="new-trip-title" [formGroup]="createForm" (ngSubmit)="createTrip()">
+    <div><span class="form-eyebrow">Programación operativa</span><h2 id="new-trip-title">Nuevo viaje</h2><p>Crea el viaje sin recursos. El conductor y el vehículo se asignan después.</p></div>
+    @if (catalogsLoading()) { <div class="catalog-state"><mat-spinner diameter="28" />Cargando rutas y horarios…</div> }
+    @if (catalogError()) { <div class="wp-alert wp-alert--error" role="alert"><mat-icon>error</mat-icon><span>{{ catalogError() }}</span><button class="wp-btn wp-btn--secondary wp-btn--sm" type="button" (click)="loadCatalogs()">Reintentar</button></div> }
+    @if (!catalogsLoading() && !catalogError()) {
+      @if (activeRoutes().length === 0) { <div class="wp-alert wp-alert--error" role="alert"><mat-icon>route</mat-icon><span>No hay rutas activas disponibles para programar viajes.</span></div> }
+      <div class="trip-form-grid">
+        <label class="wp-field wide"><span class="wp-label">Ruta *</span><select class="wp-input" formControlName="routeId" (change)="routeChanged()"><option [ngValue]="0">Selecciona una ruta activa</option>@for (route of activeRoutes(); track route.id) { <option [ngValue]="route.id">{{ routeLabel(route) }}</option> }</select>@if (createForm.controls.routeId.invalid && createForm.controls.routeId.touched) { <small class="wp-field-error">Selecciona una ruta activa.</small> }</label>
+        <label class="wp-field wide"><span class="wp-label">Horario de ruta</span><select class="wp-input" formControlName="routeScheduleId"><option [ngValue]="null">Sin horario asociado</option>@for (schedule of schedulesForSelectedRoute(); track schedule.id) { <option [ngValue]="schedule.id">{{ scheduleLabel(schedule) }}</option> }</select><small class="field-note">Opcional. Solo se muestran horarios activos de la ruta elegida.</small></label>
+        <label class="wp-field"><span class="wp-label">Inicio *</span><input class="wp-input" type="datetime-local" formControlName="scheduledStartAt" />@if (createForm.controls.scheduledStartAt.invalid && createForm.controls.scheduledStartAt.touched) { <small class="wp-field-error">Indica cuándo inicia el viaje.</small> }</label>
+        <label class="wp-field"><span class="wp-label">Fin *</span><input class="wp-input" type="datetime-local" formControlName="scheduledEndAt" />@if (createForm.controls.scheduledEndAt.invalid && createForm.controls.scheduledEndAt.touched) { <small class="wp-field-error">Indica cuándo termina el viaje.</small> }</label>
+      </div>
+      <div class="unassigned-note"><mat-icon>info</mat-icon><span>El viaje quedará <strong>Programado</strong>, sin conductor y sin vehículo.</span></div>
+    }
+    @if (createError()) { <div class="wp-alert wp-alert--error" role="alert"><mat-icon>error</mat-icon><span>{{ createError() }}</span></div> }
+    <div class="dialog-actions"><button class="wp-btn wp-btn--secondary" type="button" [disabled]="creating()" (click)="closeCreate()">Cancelar</button><button class="wp-btn wp-btn--primary" type="submit" [disabled]="creating() || catalogsLoading() || !!catalogError() || activeRoutes().length === 0">{{ creating() ? 'Creando viaje…' : 'Crear viaje' }}</button></div>
+  </form></div>
+}
