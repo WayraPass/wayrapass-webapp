@@ -1,0 +1,10 @@
+<div class="student-shell">
+  <header class="mobile-header"><a class="brand" routerLink="/driver/dashboard" aria-label="WayraPass, inicio del conductor"><img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" /></a><button type="button" class="menu-button" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-controls="driver-navigation" aria-label="Abrir menú de navegación"><mat-icon>{{ menuOpen() ? 'close' : 'menu' }}</mat-icon></button></header>
+  <aside class="student-sidebar" [class.open]="menuOpen()">
+    <a class="brand sidebar-brand" routerLink="/driver/dashboard" (click)="closeMenu()" aria-label="WayraPass, inicio del conductor"><img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" /></a>
+    <nav id="driver-navigation" class="student-nav" aria-label="Menú del conductor"><span class="nav-title">Mi operación</span><a routerLink="/driver/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()"><mat-icon>home</mat-icon>Inicio</a><a routerLink="/driver/trips" routerLinkActive="active" (click)="closeMenu()"><mat-icon>route</mat-icon>Mis viajes</a><a routerLink="/driver/incidents" routerLinkActive="active" (click)="closeMenu()"><mat-icon>report_problem</mat-icon>Incidencias</a></nav>
+    <div class="student-user"><span class="avatar" aria-hidden="true">{{ initials() }}</span><span class="identity"><strong>{{ profile()?.fullName || user()?.fullName }}</strong><small>@if (profile(); as driver) { Licencia {{ driver.licenseCategory }} } @else { Conductor }</small></span><button type="button" (click)="logout()" aria-label="Cerrar sesión" title="Cerrar sesión"><mat-icon>logout</mat-icon></button></div>
+  </aside>
+  @if (menuOpen()) { <button type="button" class="menu-backdrop" (click)="closeMenu()" aria-label="Cerrar menú"></button> }
+  <main class="student-content"><router-outlet /></main>
+</div>
