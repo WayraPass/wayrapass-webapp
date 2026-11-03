@@ -24,6 +24,26 @@ describe('FamilyService B1', () => {
     request.flush([2, 8]);
   });
 
+  it('generates a student code and links a family using only that code', () => {
+    service.generateLinkCode().subscribe((response) => expect(response.code).toBe('123456'));
+    const generate = http.expectOne(`${environment.apiUrl}/students/me/family-code`);
+    expect(generate.request.method).toBe('POST');
+    generate.flush({ code: '123456', expiresAt: '2026-11-03T20:10:00Z' });
+
+    service.linkStudent({ code: '123456', relationship: 'Familiar' }).subscribe((student) => expect(student.fullName).toBe('Rafael Estudiante'));
+    const link = http.expectOne(`${environment.apiUrl}/family-links`);
+    expect(link.request.method).toBe('POST');
+    expect(link.request.body).toEqual({ code: '123456', relationship: 'Familiar' });
+    link.flush({ studentId: 2, fullName: 'Rafael Estudiante', email: 'rafael@edu.pe', institutionName: 'UPC', campusName: 'Monterrico', relationship: 'Familiar' });
+  });
+
+  it('loads human linked-student summaries', () => {
+    service.getLinkedStudents().subscribe((students) => expect(students[0]?.fullName).toBe('Rafael Estudiante'));
+    const request = http.expectOne(`${environment.apiUrl}/family-links/me/student-summaries`);
+    expect(request.request.method).toBe('GET');
+    request.flush([{ studentId: 2, fullName: 'Rafael Estudiante' }]);
+  });
+
   it('updates the complete notification preferences contract', () => {
     const body: NotificationPreferencesRequest = { notifyBoarding: true, notifyArrival: false, notifyDelay: true, notifyVehicleChange: false, notifyIncident: true };
     service.updateNotificationPreferences(2, body).subscribe();

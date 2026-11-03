@@ -1,11 +1,11 @@
 <div class="history-page">
   <header class="page-heading"><div><p class="eyebrow">{{ familyMode ? 'US09 · Acompañamiento' : 'US08 · Movilidad' }}</p><h1>{{ familyMode ? 'Historial del estudiante' : 'Mi historial' }}</h1><p>{{ familyMode ? 'Consulta los viajes registrados de un estudiante vinculado.' : 'Consulta los viajes en los que tu abordaje fue registrado.' }}</p></div></header>
 
-  @if (familyMode && studentIds().length) {
-    <section class="family-student-selector"><div><h2>Estudiante</h2><p>WayraPass limita la consulta a tus vínculos autorizados.</p></div>@if (studentIds().length > 1) { <select aria-label="Estudiante vinculado" [value]="selectedStudentId()" (change)="selectStudent(+$any($event.target).value)">@for (studentId of studentIds(); track studentId) { <option [value]="studentId">{{ studentLabel(studentId) }}</option> }</select> } @else { <strong>{{ studentLabel(studentIds()[0]!) }}</strong> }</section>
+  @if (familyMode && students().length) {
+    <section class="family-student-selector"><div><h2>Estudiante</h2><p>WayraPass limita la consulta a tus vínculos autorizados.</p></div>@if (students().length > 1) { <select aria-label="Estudiante vinculado" [value]="selectedStudentId()" (change)="selectStudent(+$any($event.target).value)">@for (student of students(); track student.studentId) { <option [value]="student.studentId">{{ student.fullName }}</option> }</select> } @else { <strong>{{ students()[0]!.fullName }}</strong> }</section>
   }
 
-  @if (!familyMode || studentIds().length) {
+  @if (!familyMode || students().length) {
     <section class="filter-card" aria-labelledby="history-filters">
       <div><h2 id="history-filters">Periodo</h2><p>El historial se consulta directamente en WayraPass.</p></div>
       <form [formGroup]="filters" (ngSubmit)="loadHistory()">
@@ -20,7 +20,7 @@
 
   @if (loading()) {
     <section class="state-card"><mat-spinner diameter="42" /><h2>Cargando historial…</h2><p>Estamos consultando tus viajes registrados.</p></section>
-  } @else if (familyMode && !studentIds().length && !errorMessage()) {
+  } @else if (familyMode && !students().length && !errorMessage()) {
     <section class="state-card empty"><span><mat-icon>family_restroom</mat-icon></span><h2>No tienes estudiantes vinculados</h2><p>Cuando un estudiante autorice tu acceso, podrás consultar aquí su historial.</p></section>
   } @else if (!trips().length && !errorMessage()) {
     <section class="state-card empty"><span><mat-icon>history</mat-icon></span><h2>{{ familyMode ? 'Este estudiante todavía no tiene viajes registrados' : 'Todavía no tienes viajes registrados' }}</h2><p>No existen abordajes dentro del periodo seleccionado.</p></section>

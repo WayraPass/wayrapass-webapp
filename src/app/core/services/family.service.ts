@@ -5,8 +5,11 @@ import { environment } from '../../../environments/environment';
 import { ApiErrorResponse } from '../models/auth.models';
 import {
   FamilyDriverCredential,
+  FamilyLinkCode,
   FamilyTripHistoryDetail,
   FamilyUpcomingTrip,
+  LinkedStudent,
+  LinkStudentRequest,
   NotificationPreferences,
   NotificationPreferencesRequest,
 } from '../models/family.models';
@@ -16,6 +19,18 @@ import { TripHistoryItem } from '../models/trip.models';
 export class FamilyService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/family-links/me/students`;
+
+  generateLinkCode(): Observable<FamilyLinkCode> {
+    return this.http.post<FamilyLinkCode>(`${environment.apiUrl}/students/me/family-code`, {});
+  }
+
+  linkStudent(request: LinkStudentRequest): Observable<LinkedStudent> {
+    return this.http.post<LinkedStudent>(`${environment.apiUrl}/family-links`, request);
+  }
+
+  getLinkedStudents(): Observable<LinkedStudent[]> {
+    return this.http.get<LinkedStudent[]>(`${environment.apiUrl}/family-links/me/student-summaries`);
+  }
 
   getLinkedStudentIds(): Observable<number[]> {
     return this.http.get<number[]>(this.baseUrl);

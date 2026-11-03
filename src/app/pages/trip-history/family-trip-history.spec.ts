@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
-import { FamilyTripHistoryDetail } from '../../core/models/family.models';
+import { FamilyTripHistoryDetail, LinkedStudent } from '../../core/models/family.models';
 import { TripHistoryItem } from '../../core/models/trip.models';
 import { FamilyService } from '../../core/services/family.service';
 import { TripService } from '../../core/services/trip.service';
@@ -12,10 +12,10 @@ const trip: TripHistoryItem = { tripId: 31, routeId: 5, routeCode: 'UPC-SMI-01',
 const detail: FamilyTripHistoryDetail = { trip, incidents: [] };
 
 class FamilyServiceStub {
-  ids: Observable<number[]> = of([2]);
+  students: Observable<LinkedStudent[]> = of([{ studentId: 2, fullName: 'Rafael Estudiante', email: 'rafael@edu.pe', institutionName: 'UPC', campusName: 'Monterrico', relationship: 'Familiar' }]);
   history: Observable<TripHistoryItem[]> = of([trip]);
   detail: Observable<FamilyTripHistoryDetail> = of(detail);
-  getLinkedStudentIds() { return this.ids; }
+  getLinkedStudents() { return this.students; }
   getHistory() { return this.history; }
   getHistoryDetail() { return this.detail; }
 }

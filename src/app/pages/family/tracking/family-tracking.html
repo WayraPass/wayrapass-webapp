@@ -4,10 +4,10 @@
   @if (successMessage()) { <div class="alert success" role="status"><mat-icon>check_circle</mat-icon><span>{{ successMessage() }}</span></div> }
   @if (loading()) {
     <section class="state-card"><mat-spinner diameter="42" /><h2>Cargando seguimiento…</h2></section>
-  } @else if (!studentIds().length && !errorMessage()) {
+  } @else if (!students().length && !errorMessage()) {
     <section class="state-card"><mat-icon>family_restroom</mat-icon><h2>No tienes estudiantes vinculados</h2><p>Cuando un estudiante autorice tu acceso, aparecerá en este espacio.</p></section>
-  } @else {
-    <section class="student-selector"><div><h2>Estudiante</h2><p>Solo puedes consultar vínculos autorizados por WayraPass.</p></div>@if (studentIds().length > 1) { <select aria-label="Estudiante vinculado" [value]="selectedStudentId()" (change)="selectStudent(+$any($event.target).value)">@for (studentId of studentIds(); track studentId) { <option [value]="studentId">{{ studentLabel(studentId) }}</option> }</select> } @else { <strong>{{ studentLabel(studentIds()[0]!) }}</strong> }</section>
+  } @else if (students().length) {
+    <section class="student-selector"><div><h2>Estudiante</h2><p>Solo puedes consultar vínculos autorizados por WayraPass.</p></div>@if (students().length > 1) { <select aria-label="Estudiante vinculado" [value]="selectedStudentId()" (change)="selectStudent(+$any($event.target).value)">@for (student of students(); track student.studentId) { <option [value]="student.studentId">{{ student.fullName }}</option> }</select> } @else { <strong>{{ students()[0]!.fullName }}</strong> }</section>
     <div class="tracking-grid">
       <section class="trips-card"><header><div><p class="eyebrow">Próximos viajes</p><h2>Agenda de traslado</h2></div><span>{{ upcomingTrips().length }}</span></header>
         @for (trip of upcomingTrips(); track trip.tripId) { <article><div class="date"><strong>{{ trip.scheduledStartAt | date:'dd' }}</strong><small>{{ trip.scheduledStartAt | date:'MMM' }}</small></div><div><span class="route-code">{{ trip.routeCode }}</span><h3>{{ trip.routeName }}</h3><p>{{ trip.routeOrigin }} → {{ trip.routeDestination }}</p><small><mat-icon>where_to_vote</mat-icon>{{ trip.stopName }} · {{ trip.scheduledStartAt | date:'medium' }}</small>@if (trip.resourcesReassigned || trip.studentRouteOrStopModified) { <em>{{ trip.modificationMessage || 'La asignación de este viaje fue actualizada.' }}</em> }</div></article> } @empty { <div class="empty-inline"><mat-icon>event_busy</mat-icon><p>Este estudiante no tiene próximos viajes programados.</p></div> }

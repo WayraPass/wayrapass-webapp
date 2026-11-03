@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { finalize, forkJoin } from 'rxjs';
-import { FamilyDriverCredential, FamilyUpcomingTrip, NotificationPreferences } from '../../../core/models/family.models';
+import { FamilyDriverCredential, FamilyUpcomingTrip, LinkedStudent, NotificationPreferences } from '../../../core/models/family.models';
 import { FamilyService, familyErrorMessage } from '../../../core/services/family.service';
 import { DriverCredentialCard } from '../driver-credential/driver-credential';
 
@@ -12,7 +12,7 @@ import { DriverCredentialCard } from '../driver-credential/driver-credential';
 export class FamilyTracking {
   private readonly family = inject(FamilyService);
   private readonly fb = inject(FormBuilder);
-  readonly studentIds = signal<number[]>([]);
+  readonly students = signal<LinkedStudent[]>([]);
   readonly selectedStudentId = signal<number | null>(null);
   readonly upcomingTrips = signal<FamilyUpcomingTrip[]>([]);
   readonly driver = signal<FamilyDriverCredential | null>(null);
@@ -27,11 +27,11 @@ export class FamilyTracking {
 
   loadStudents(): void {
     this.loading.set(true); this.errorMessage.set('');
-    this.family.getLinkedStudentIds().subscribe({
-      next: (ids) => {
-        this.studentIds.set(ids);
-        if (!ids.length) { this.loading.set(false); return; }
-        this.selectStudent(ids[0]!);
+    this.family.getLinkedStudents().subscribe({
+      next: (students) => {
+        this.students.set(students);
+        if (!students.length) { this.loading.set(false); return; }
+        this.selectStudent(students[0]!.studentId);
       },
       error: (error: unknown) => { this.loading.set(false); this.errorMessage.set(familyErrorMessage(error)); },
     });
@@ -48,7 +48,9 @@ export class FamilyTracking {
     });
   }
 
-  studentLabel(studentId: number): string { return `Estudiante vinculado ${this.studentIds().indexOf(studentId) + 1}`; }
+  studentLabel(studentId: number): string {
+    return this.students().find((student) => student.studentId === studentId)?.fullName ?? 'Estudiante vinculado';
+  }
 
   savePreferences(): void {
     const studentId = this.selectedStudentId();

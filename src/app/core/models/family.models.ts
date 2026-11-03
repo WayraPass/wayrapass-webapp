@@ -37,3 +37,22 @@ export interface FamilyTripHistoryDetail {
 }
 
 export type FamilyDriverCredential = DriverCredential;
+
+export interface FamilyLinkCode {
+  code: string;
+  expiresAt: string;
+}
+
+export interface LinkedStudent {
+  studentId: number;
+  fullName: string;
+  email: string;
+  institutionName: string;
+  campusName: string | null;
+  relationship: string | null;
+}
+
+export interface LinkStudentRequest {
+  code: string;
+  relationship: string;
+}

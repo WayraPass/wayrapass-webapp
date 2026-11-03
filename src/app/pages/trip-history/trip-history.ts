@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { finalize } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
-import { FamilyTripHistoryDetail } from '../../core/models/family.models';
+import { FamilyTripHistoryDetail, LinkedStudent } from '../../core/models/family.models';
 import { FamilyService, familyErrorMessage } from '../../core/services/family.service';
 import {
   BoardingStatus,
@@ -32,7 +32,7 @@ export class TripHistory {
   private readonly route = inject(ActivatedRoute, { optional: true });
 
   readonly familyMode = Boolean(this.route?.snapshot.data['familyMode']);
-  readonly studentIds = signal<number[]>([]);
+  readonly students = signal<LinkedStudent[]>([]);
   readonly selectedStudentId = signal<number | null>(null);
 
   readonly trips = signal<TripHistoryItem[]>([]);
@@ -56,10 +56,10 @@ export class TripHistory {
   loadFamilyStudents(): void {
     this.loading.set(true);
     this.errorMessage.set('');
-    this.familyService.getLinkedStudentIds().subscribe({
-      next: (ids) => {
-        this.studentIds.set(ids);
-        if (ids.length) this.selectStudent(ids[0]!);
+    this.familyService.getLinkedStudents().subscribe({
+      next: (students) => {
+        this.students.set(students);
+        if (students.length) this.selectStudent(students[0]!.studentId);
         else this.loading.set(false);
       },
       error: (error: unknown) => {
@@ -77,7 +77,7 @@ export class TripHistory {
   }
 
   studentLabel(studentId: number): string {
-    return `Estudiante vinculado ${this.studentIds().indexOf(studentId) + 1}`;
+    return this.students().find((student) => student.studentId === studentId)?.fullName ?? 'Estudiante vinculado';
   }
 
   loadHistory(): void {
@@ -134,7 +134,7 @@ export class TripHistory {
   }
 
   retry(): void {
-    if (this.familyMode && !this.studentIds().length) this.loadFamilyStudents();
+    if (this.familyMode && !this.students().length) this.loadFamilyStudents();
     else this.loadHistory();
   }
 
