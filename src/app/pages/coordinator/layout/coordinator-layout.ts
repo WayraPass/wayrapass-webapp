@@ -43,11 +43,10 @@ export class CoordinatorLayout {
   );
 
   readonly navItems: ReadonlyArray<NavItem> = [
+    { label: 'Inicio', icon: 'home', link: '/coordinator/dashboard', sections: ['/coordinator/dashboard'] },
     { label: 'Rutas y paraderos', icon: 'alt_route', link: '/coordinator/routes', sections: ['/coordinator/routes', '/coordinator/stops'] },
-    { label: 'Choferes y unidades', icon: 'directions_bus' },
-    { label: 'Asignaciones', icon: 'event' },
-    { label: 'Incidencias', icon: 'report_problem' },
-    { label: 'Reportes', icon: 'bar_chart' },
+    { label: 'Conductores', icon: 'badge', link: '/coordinator/drivers', sections: ['/coordinator/drivers'] },
+    { label: 'Vehículos', icon: 'directions_bus', link: '/coordinator/vehicles', sections: ['/coordinator/vehicles'] },
   ];
 
   isActive(item: NavItem): boolean {

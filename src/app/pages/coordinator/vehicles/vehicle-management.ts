@@ -1,0 +1,21 @@
+import { Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { finalize } from 'rxjs';
+import { AuthorizationStatus, VehicleAdmin, VehicleOperationalStatus, VehicleRequest } from '../../../core/models/coordinator.models';
+import { CoordinatorService, coordinatorErrorMessage } from '../../../core/services/coordinator.service';
+
+@Component({ selector: 'app-vehicle-management', standalone: true, imports: [ReactiveFormsModule, MatIconModule, MatProgressSpinnerModule], templateUrl: './vehicle-management.html', styleUrl: '../stop-management/stop-management.css' })
+export class VehicleManagement {
+  private readonly service = inject(CoordinatorService); private readonly fb = inject(FormBuilder).nonNullable;
+  readonly vehicles = signal<VehicleAdmin[]>([]); readonly loading = signal(true); readonly saving = signal(false); readonly errorMessage = signal(''); readonly notice = signal(''); readonly formOpen = signal(false); readonly editing = signal<VehicleAdmin | null>(null);
+  readonly authorizations: AuthorizationStatus[] = ['PENDING', 'AUTHORIZED', 'REJECTED']; readonly operations: VehicleOperationalStatus[] = ['AVAILABLE', 'IN_SERVICE', 'MAINTENANCE', 'UNAVAILABLE', 'INACTIVE'];
+  readonly form = this.fb.group({ plate: ['', [Validators.required, Validators.maxLength(20)]], brand: ['', Validators.maxLength(60)], model: ['', Validators.maxLength(60)], capacity: [1, Validators.min(1)], qrToken: ['', Validators.maxLength(120)], authorizationStatus: this.fb.control<AuthorizationStatus>('PENDING'), operationalStatus: this.fb.control<VehicleOperationalStatus>('UNAVAILABLE') });
+  constructor() { this.load(); }
+  load(): void { this.loading.set(true); this.errorMessage.set(''); this.service.vehicles().pipe(finalize(() => this.loading.set(false))).subscribe({ next: (items) => this.vehicles.set(items), error: (error: unknown) => this.errorMessage.set(coordinatorErrorMessage(error)) }); }
+  open(item: VehicleAdmin | null = null): void { this.editing.set(item); this.form.reset(item ? { plate: item.plate, brand: item.brand ?? '', model: item.model ?? '', capacity: item.capacity, qrToken: '', authorizationStatus: item.authorizationStatus, operationalStatus: item.operationalStatus } : { plate: '', brand: '', model: '', capacity: 1, qrToken: '', authorizationStatus: 'PENDING', operationalStatus: 'UNAVAILABLE' }); this.formOpen.set(true); this.errorMessage.set(''); }
+  save(): void { const value = this.form.getRawValue(); this.form.controls.operationalStatus.setErrors(null); if (value.operationalStatus === 'AVAILABLE' && value.authorizationStatus !== 'AUTHORIZED') this.form.controls.operationalStatus.setErrors({ authorization: true }); if (this.form.invalid) { this.form.markAllAsTouched(); return; } const request: VehicleRequest = { plate: value.plate.trim().toUpperCase(), brand: value.brand.trim() || null, model: value.model.trim() || null, capacity: value.capacity, qrToken: value.qrToken.trim() || null, authorizationStatus: value.authorizationStatus, operationalStatus: value.operationalStatus }; const editing = this.editing(); this.saving.set(true); (editing ? this.service.updateVehicle(editing.id, request) : this.service.createVehicle(request)).pipe(finalize(() => this.saving.set(false))).subscribe({ next: (saved) => { this.vehicles.update((items) => editing ? items.map((item) => item.id === saved.id ? saved : item) : [...items, saved]); this.formOpen.set(false); this.notice.set(editing ? `Vehículo ${saved.plate} actualizado.` : `Vehículo ${saved.plate} creado.`); }, error: (error: unknown) => this.errorMessage.set(coordinatorErrorMessage(error)) }); }
+  authorizationLabel(value: AuthorizationStatus): string { return ({ PENDING: 'Pendiente', AUTHORIZED: 'Autorizado', REJECTED: 'Rechazado' } as const)[value]; }
+  operationLabel(value: VehicleOperationalStatus): string { return ({ AVAILABLE: 'Disponible', IN_SERVICE: 'En servicio', MAINTENANCE: 'Mantenimiento', UNAVAILABLE: 'No disponible', INACTIVE: 'Inactivo' } as const)[value]; }
+}

@@ -4,8 +4,6 @@ import { ForgotPassword } from './pages/auth/forgot-password/forgot-password';
 import { Login } from './pages/auth/login/login';
 import { Register } from './pages/auth/register/register';
 import { ResetPassword } from './pages/auth/reset-password/reset-password';
-import { CoordinatorDashboard } from './pages/coordinator/dashboard/dashboard';
-import { DriverDashboard } from './pages/driver/dashboard/dashboard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -38,19 +36,30 @@ export const routes: Routes = [
       { path: 'history', loadComponent: () => import('./pages/trip-history/trip-history').then((m) => m.TripHistory), data: { familyMode: true }, title: 'Historial familiar · WayraPass' },
     ],
   },
-  { path: 'driver/dashboard', component: DriverDashboard, canActivate: [authGuard, roleGuard('DRIVER')] },
-  { path: 'coordinator/dashboard', component: CoordinatorDashboard, canActivate: [authGuard, roleGuard('COORDINATOR')] },
+  {
+    path: 'driver',
+    loadComponent: () => import('./pages/driver/layout/driver-layout').then((m) => m.DriverLayout),
+    canActivate: [authGuard, roleGuard('DRIVER')],
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', loadComponent: () => import('./pages/driver/dashboard/dashboard').then((m) => m.DriverDashboard), title: 'Inicio del conductor · WayraPass' },
+      { path: 'trips', loadComponent: () => import('./pages/driver/trips/driver-trips').then((m) => m.DriverTrips), title: 'Mis viajes · WayraPass' },
+      { path: 'incidents', loadComponent: () => import('./pages/driver/incidents/driver-incidents').then((m) => m.DriverIncidents), title: 'Incidencias · WayraPass' },
+    ],
+  },
   {
     path: 'coordinator',
     loadComponent: () => import('./pages/coordinator/layout/coordinator-layout').then((m) => m.CoordinatorLayout),
     canActivate: [authGuard, roleGuard('COORDINATOR')],
     children: [
-      { path: '', redirectTo: 'routes', pathMatch: 'full' },
-      { path: 'dashboard', redirectTo: 'routes', pathMatch: 'full' },
-      { path: 'routes', loadComponent: () => import('./pages/coordinator/route-list/route-list').then((m) => m.RouteList), title: 'Rutas · WayraPass' },
-      { path: 'routes/new', loadComponent: () => import('./pages/coordinator/route-form/route-form').then((m) => m.RouteForm), title: 'Nueva ruta · WayraPass' },
-      { path: 'routes/:id/edit', loadComponent: () => import('./pages/coordinator/route-form/route-form').then((m) => m.RouteForm), title: 'Editar ruta · WayraPass' },
-      { path: 'stops', loadComponent: () => import('./pages/coordinator/stop-list/stop-list').then((m) => m.StopList), title: 'Paraderos · WayraPass' },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', loadComponent: () => import('./pages/coordinator/dashboard/dashboard').then((m) => m.CoordinatorDashboard), title: 'Coordinación · WayraPass' },
+      { path: 'routes', loadComponent: () => import('./pages/coordinator/route-management/route-management').then((m) => m.RouteManagement), title: 'Rutas · WayraPass' },
+      { path: 'routes/new', redirectTo: 'routes', pathMatch: 'full' },
+      { path: 'routes/:id/edit', redirectTo: 'routes', pathMatch: 'full' },
+      { path: 'stops', loadComponent: () => import('./pages/coordinator/stop-management/stop-management').then((m) => m.StopManagement), title: 'Paraderos · WayraPass' },
+      { path: 'drivers', loadComponent: () => import('./pages/coordinator/drivers/driver-management').then((m) => m.DriverManagement), title: 'Conductores · WayraPass' },
+      { path: 'vehicles', loadComponent: () => import('./pages/coordinator/vehicles/vehicle-management').then((m) => m.VehicleManagement), title: 'Vehículos · WayraPass' },
     ],
   },
   { path: '**', redirectTo: 'login' },

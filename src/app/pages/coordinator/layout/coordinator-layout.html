@@ -1,6 +1,6 @@
 <div class="wp-app shell">
   <nav class="sidebar" aria-label="Menú del coordinador">
-    <a class="brand" routerLink="/coordinator/routes" aria-label="WayraPass, inicio">
+    <a class="brand" routerLink="/coordinator/dashboard" aria-label="WayraPass, inicio">
       <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
     </a>
 
@@ -12,11 +12,6 @@
              [attr.aria-current]="isActive(item) ? 'page' : null">
             <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>{{ item.label }}
           </a>
-        } @else {
-          <span class="nav-item disabled" aria-disabled="true" title="Se implementa en otra User Story">
-            <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>{{ item.label }}
-            <small>Pronto</small>
-          </span>
         }
       }
     </div>
