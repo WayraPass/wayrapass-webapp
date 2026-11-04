@@ -1,1 +1,17 @@
 :host { display: block; min-height: 100vh; }
+
+.select-shell select {
+  width: 100%;
+  min-width: 0;
+  padding: 14px 42px 14px 16px;
+  color: var(--wp-navy);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.select-shell select:disabled { cursor: wait; opacity: .7; }
+.field-help { margin: 6px 2px 0; color: #687482; font-size: 12px; }
+.inline-retry { padding: 0; color: #17607e; border: 0; background: transparent; font-weight: 700; cursor: pointer; }

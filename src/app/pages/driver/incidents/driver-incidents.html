@@ -1,0 +1,28 @@
+<div class="incidents-page">
+  <header><p class="eyebrow">Tu jornada</p><h1>Incidencias</h1><p>Informa una situación ocurrida durante uno de tus viajes activos.</p></header>
+
+  @if (tripLoading()) {
+    <section class="state-card" aria-live="polite"><mat-spinner diameter="42" /><h2>Cargando viajes disponibles…</h2></section>
+  } @else if (tripError()) {
+    <section class="state-card error" role="alert"><mat-icon>cloud_off</mat-icon><h2>No pudimos cargar tus viajes</h2><p>{{ tripError() }}</p><button type="button" (click)="loadTrips()"><mat-icon>refresh</mat-icon>Reintentar</button></section>
+  } @else if (!eligibleTrips().length) {
+    <section class="state-card"><mat-icon>event_busy</mat-icon><h2>No tienes viajes habilitados para reportar incidencias</h2><p>Solo puedes informar incidencias durante el embarque o mientras el viaje está en curso.</p></section>
+  } @else {
+    <section class="form-card">
+      <div class="section-heading"><mat-icon>report_problem</mat-icon><div><h2>Registrar incidencia</h2><p>Describe lo ocurrido para informar al equipo de coordinación.</p></div></div>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <label class="wide"><span>Viaje</span><select formControlName="tripId"><option [ngValue]="null">Selecciona un viaje</option>@for (trip of eligibleTrips(); track trip.tripId) { <option [ngValue]="trip.tripId">{{ trip.routeCode }} · {{ trip.routeName }} · {{ dateTimeLabel(trip.scheduledStartAt) }} · {{ statusLabel(trip.status) }}</option> }</select>@if (form.controls.tripId.touched && form.controls.tripId.invalid) { <small>Selecciona el viaje donde ocurrió la incidencia.</small> }</label>
+        <label><span>Tipo de incidencia</span><select formControlName="type"><option value="">Selecciona una categoría</option>@for (type of incidentTypes; track type.value) { <option [value]="type.value">{{ type.label }}</option> }</select>@if (form.controls.type.touched && form.controls.type.invalid) { <small>Selecciona el tipo de incidencia.</small> }</label>
+        <label><span>Prioridad</span><select formControlName="priority">@for (priority of priorities; track priority.value) { <option [value]="priority.value">{{ priority.label }}</option> }</select></label>
+        <label><span>Minutos de demora</span><input type="number" min="0" step="1" formControlName="delayMinutes" />@if (form.controls.delayMinutes.touched && form.controls.delayMinutes.invalid) { <small>Ingresa cero o una cantidad positiva de minutos.</small> }</label>
+        <label class="wide"><span>Descripción</span><textarea rows="5" formControlName="description" [attr.maxlength]="descriptionLimit" placeholder="Explica brevemente qué ocurrió"></textarea><div class="description-meta"><small>@if (form.controls.description.touched && form.controls.description.hasError('required')) { Describe lo ocurrido. } @else if (form.controls.description.touched && form.controls.description.hasError('maxlength')) { La descripción no puede superar los {{ descriptionLimit }} caracteres. }</small><em>{{ form.controls.description.value.length }}/{{ descriptionLimit }}</em></div></label>
+        @if (submitError()) { <div class="message error wide" role="alert"><mat-icon>error_outline</mat-icon>{{ submitError() }}</div> }
+        <div class="actions wide"><button type="submit" [disabled]="form.invalid || submitting()">@if (submitting()) { <mat-spinner diameter="20" /> Registrando… } @else { <mat-icon>send</mat-icon> Registrar incidencia }</button></div>
+      </form>
+    </section>
+  }
+
+  @if (successMessage()) {
+    <section class="success-card" role="status"><mat-icon>check_circle</mat-icon><div><h2>{{ successMessage() }}</h2>@if (createdIncident(); as incident) { <p>{{ typeLabel(incident.type) }} · Prioridad {{ priorityLabel(incident.priority) }} · {{ incidentStatusLabel(incident.status) }}</p><p>{{ incident.description }}</p><small>Registrada el {{ dateTimeLabel(incident.createdAt) }}</small> }</div></section>
+  }
+</div>

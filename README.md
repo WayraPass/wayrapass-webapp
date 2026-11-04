@@ -15,6 +15,10 @@ La autenticación de esta etapa funciona completamente en Angular y no requiere 
 
 Los registros y cambios de contraseña se guardan localmente en el navegador. El registro público solo admite cuentas de estudiante y familiar; las cuentas de chofer y coordinador son previamente habilitadas.
 
+#### Estado del frontend
+
+El frontend actualmente incluye la simulación de autenticación y acceso según rol. Las demás historias de usuario y el prototipo interactivo continúan en desarrollo.
+
 ## Development server
 
 To start a local development server, run:

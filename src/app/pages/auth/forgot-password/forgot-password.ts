@@ -5,7 +5,7 @@ import { finalize } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { PasswordResetTicket } from '../../../core/models/auth.models';
+import { PasswordResetResponse } from '../../../core/models/auth.models';
 import { AuthService, authErrorMessage } from '../../../core/services/auth.service';
 
 @Component({
@@ -22,7 +22,8 @@ export class ForgotPassword {
 
   readonly loading = signal(false);
   readonly errorMessage = signal('');
-  readonly ticket = signal<PasswordResetTicket | null>(null);
+  readonly response = signal<PasswordResetResponse | null>(null);
+  readonly requestedEmail = signal('');
   readonly form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
 
   submit(): void {
@@ -32,14 +33,17 @@ export class ForgotPassword {
     this.auth.requestPasswordReset(this.form.controls.email.value).pipe(
       finalize(() => this.loading.set(false)),
     ).subscribe({
-      next: (ticket) => this.ticket.set(ticket),
+      next: (response) => {
+        this.requestedEmail.set(this.form.controls.email.value.trim());
+        this.response.set(response);
+      },
       error: (error: unknown) => this.errorMessage.set(authErrorMessage(error)),
     });
   }
 
   continueToReset(): void {
-    const ticket = this.ticket();
-    if (!ticket) return;
-    void this.router.navigate(['/reset-password'], { queryParams: { token: ticket.token, email: ticket.email } });
+    const token = this.response()?.developmentToken;
+    if (!token) return;
+    void this.router.navigate(['/reset-password'], { queryParams: { token } });
   }
 }

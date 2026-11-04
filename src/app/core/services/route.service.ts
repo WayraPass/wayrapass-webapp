@@ -1,9 +1,19 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { inject, Injectable, signal } from '@angular/core';
 import { Observable, delay, mergeMap, of, throwError, timer } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { ApiErrorResponse } from '../models/auth.models';
 import {
   EntityStatus,
+  FavoriteRoute,
+  GroupedRouteSearch,
+  GroupedRouteSearchFilters,
+  InstitutionCatalog,
+  PickupStop,
   RouteMockError,
   RouteRequest,
+  RouteSearchFilters,
+  RouteSearchOption,
   Stop,
   StopRequest,
   TransportRoute,
@@ -82,8 +92,60 @@ const DEMO_ROUTES: ReadonlyArray<TransportRoute> = [
 // simulación sin backend
 @Injectable({ providedIn: 'root' })
 export class RouteService {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = environment.apiUrl;
   private readonly _routes = signal<TransportRoute[]>(load(ROUTES_KEY, DEMO_ROUTES));
   private readonly _stops = signal<Stop[]>(load(STOPS_KEY, DEMO_STOPS));
+
+  // US02 · búsqueda y favoritos del estudiante
+
+  getPublicInstitutions(): Observable<InstitutionCatalog[]> {
+    return this.http.get<InstitutionCatalog[]>(`${this.apiUrl}/public/institutions`);
+  }
+
+  getDistricts(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/routes/catalog/districts`);
+  }
+
+  getStopsByDistrict(district: string): Observable<PickupStop[]> {
+    return this.http.get<PickupStop[]>(`${this.apiUrl}/routes/catalog/stops`, {
+      params: new HttpParams().set('district', district),
+    });
+  }
+
+  searchGroupedRoutes(filters: GroupedRouteSearchFilters = {}): Observable<GroupedRouteSearch[]> {
+    return this.http.get<GroupedRouteSearch[]>(`${this.apiUrl}/routes/search/grouped`, {
+      params: this.searchParams(filters),
+    });
+  }
+
+  searchRoutes(filters: RouteSearchFilters = {}): Observable<RouteSearchOption[]> {
+    return this.http.get<RouteSearchOption[]>(`${this.apiUrl}/routes/search`, {
+      params: this.searchParams(filters),
+    });
+  }
+
+  getFavoriteRoutes(): Observable<FavoriteRoute[]> {
+    return this.http.get<FavoriteRoute[]>(`${this.apiUrl}/favorites/me`);
+  }
+
+  addFavorite(routeId: number): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/favorites/me/${routeId}`, null);
+  }
+
+  removeFavorite(routeId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/favorites/me/${routeId}`);
+  }
+
+  private searchParams(filters: object): HttpParams {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, String(value));
+      }
+    }
+    return params;
+  }
 
   // Rutas 
 
@@ -192,7 +254,17 @@ export class RouteService {
 }
 
 export function routeErrorMessage(error: unknown): string {
-  return error instanceof RouteMockError ? error.message : 'No se pudo completar la operación. Inténtalo de nuevo.';
+  if (error instanceof RouteMockError) return error.message;
+  if (error instanceof HttpErrorResponse) {
+    if (error.status === 0) return 'No se pudo conectar con el backend de WayraPass.';
+    const response = error.error as ApiErrorResponse | string | null;
+    if (response && typeof response === 'object') {
+      const fieldError = response.fieldErrors ? Object.values(response.fieldErrors)[0] : null;
+      return fieldError ?? response.message ?? `La operación falló con código ${error.status}.`;
+    }
+    if (typeof response === 'string' && response.trim()) return response;
+  }
+  return 'No se pudo completar la operación. Inténtalo de nuevo.';
 }
 
 function clean(request: RouteRequest): RouteRequest {

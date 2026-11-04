@@ -27,7 +27,8 @@
             ],
             "styles": [
               "src/styles.css",
-              "src/styles/coordinator.css"
+              "src/styles/coordinator.css",
+              "src/app/pages/student/route-search/route-search.css"
             ]
           },
           "configurations": {

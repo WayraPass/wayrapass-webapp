@@ -1,0 +1,26 @@
+<div class="dashboard-content">
+  <section class="welcome-card">
+    <div class="role-icon"><mat-icon>school</mat-icon></div>
+    <p class="eyebrow">Acceso de estudiante</p>
+    <h1>Hola, {{ user()?.fullName }}</h1>
+    <p>Busca rutas para tu institución, revisa tus favoritos y sigue tu viaje activo desde un solo lugar.</p>
+    <div class="dashboard-actions">
+      <a routerLink="/student/routes"><mat-icon>route</mat-icon>Buscar rutas</a>
+      <a routerLink="/student/enrollment" class="secondary"><mat-icon>assignment</mat-icon>Mi inscripción</a>
+      <a routerLink="/student/current-trip" class="secondary"><mat-icon>directions_bus</mat-icon>Mi viaje actual</a>
+    </div>
+  </section>
+  <section class="family-link-card" aria-labelledby="family-link-title">
+    <div class="family-link-copy"><span class="section-icon"><mat-icon>link</mat-icon></span><div><p class="eyebrow">Acceso familiar</p><h2 id="family-link-title">Vincular a un familiar</h2><p>Genera un código temporal y compártelo solo con la persona que deseas autorizar.</p></div></div>
+    @if (codeError()) { <div class="inline-alert error" role="alert"><mat-icon>error</mat-icon><span>{{ codeError() }}</span></div> }
+    @if (linkCode(); as generated) {
+      <div class="generated-code" role="status"><div><small>Código temporal</small><strong>{{ generated.code }}</strong><span>Vence el {{ generated.expiresAt | date:'medium' }}</span></div><button type="button" class="secondary-action" (click)="copyFamilyCode()"><mat-icon>content_copy</mat-icon>Copiar</button></div>
+      @if (copyMessage()) { <p class="copy-message">{{ copyMessage() }}</p> }
+      <p class="security-note"><mat-icon>info</mat-icon>El código se muestra una sola vez en este navegador. Al generar otro, el anterior deja de ser válido.</p>
+      <button type="button" class="primary-action" [disabled]="generatingCode()" (click)="generateFamilyCode()"><mat-icon>refresh</mat-icon>Generar un código nuevo</button>
+    } @else {
+      <button type="button" class="primary-action" [disabled]="generatingCode()" (click)="generateFamilyCode()">@if (generatingCode()) { <mat-spinner diameter="18" /> } @else { <mat-icon>password</mat-icon> }Generar código de vinculación</button>
+    }
+  </section>
+  <section class="scope-card"><mat-icon>verified_user</mat-icon><div><h2>Sesión verificada</h2></div></section>
+</div>

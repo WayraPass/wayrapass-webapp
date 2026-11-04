@@ -1,5 +1,6 @@
 export type EntityStatus = 'ACTIVE' | 'INACTIVE';
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type ApiDayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
 export interface Stop {
   id: string;
@@ -31,6 +32,102 @@ export interface TransportRoute {
   stops: RouteStop[];
   schedules: RouteSchedule[];
   updatedAt: number;
+}
+
+export interface RouteSearchFilters {
+  institutionId?: number;
+  routeId?: number;
+  district?: string;
+  time?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface InstitutionCatalog {
+  id: number;
+  name: string;
+  campusName: string | null;
+  displayName: string;
+  district: string | null;
+}
+
+export interface PickupStop {
+  id: number;
+  name: string;
+  district: string;
+  address: string | null;
+}
+
+export interface GroupedRouteSearchFilters {
+  institutionId?: number;
+  routeId?: number;
+  district?: string;
+  stopId?: number;
+  time?: string;
+}
+
+export interface GroupedRouteInstitution extends InstitutionCatalog {}
+
+export interface GroupedRouteStop {
+  id: number;
+  name: string;
+  address: string | null;
+  district: string | null;
+  sequence: number;
+  estimatedOffsetMinutes: number;
+}
+
+export interface GroupedRouteSchedule {
+  id: number;
+  dayOfWeek: ApiDayOfWeek;
+  departureTime: string;
+  estimatedArrivalTime: string;
+}
+
+export interface GroupedRouteSearch {
+  routeId: number;
+  routeCode: string;
+  routeName: string;
+  origin: string;
+  destination: string;
+  institution: GroupedRouteInstitution;
+  stops: GroupedRouteStop[];
+  schedules: GroupedRouteSchedule[];
+  favorite: boolean;
+}
+
+export interface RouteSearchOption {
+  routeId: number;
+  routeCode: string;
+  routeName: string;
+  origin: string;
+  destination: string;
+  institutionId: number;
+  institutionName: string;
+  campusName: string;
+  stopId: number;
+  stopName: string;
+  stopAddress: string | null;
+  stopDistrict: string | null;
+  stopLatitude: number | null;
+  stopLongitude: number | null;
+  distanceMeters: number | null;
+  stopOrder: number;
+  dayOfWeek: ApiDayOfWeek;
+  routeDepartureTime: string;
+  estimatedPickupTime: string;
+  estimatedArrivalTime: string;
+  exactTimeMatch: boolean;
+  differenceMinutes: number;
+  favorite: boolean;
+}
+
+export interface FavoriteRoute {
+  routeId: number;
+  routeCode: string;
+  routeName: string;
+  status: EntityStatus;
+  available: boolean;
 }
 
 export type RouteRequest = Omit<TransportRoute, 'id' | 'updatedAt'>;

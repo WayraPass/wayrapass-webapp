@@ -1,0 +1,19 @@
+<div class="tracking-page">
+  <header class="page-heading"><p class="eyebrow">US06 · Acompañamiento</p><h1>Seguimiento familiar</h1><p>Consulta próximos viajes, credencial del conductor y alertas del estudiante vinculado.</p></header>
+  @if (errorMessage()) { <div class="alert error" role="alert"><mat-icon>error</mat-icon><span>{{ errorMessage() }}</span><button type="button" (click)="loadStudents()">Reintentar</button></div> }
+  @if (successMessage()) { <div class="alert success" role="status"><mat-icon>check_circle</mat-icon><span>{{ successMessage() }}</span></div> }
+  @if (loading()) {
+    <section class="state-card"><mat-spinner diameter="42" /><h2>Cargando seguimiento…</h2></section>
+  } @else if (!students().length && !errorMessage()) {
+    <section class="state-card"><mat-icon>family_restroom</mat-icon><h2>No tienes estudiantes vinculados</h2><p>Cuando un estudiante autorice tu acceso, aparecerá en este espacio.</p></section>
+  } @else if (students().length) {
+    <section class="student-selector"><div><h2>Estudiante</h2><p>Solo puedes consultar vínculos autorizados por WayraPass.</p></div>@if (students().length > 1) { <select aria-label="Estudiante vinculado" [value]="selectedStudentId()" (change)="selectStudent(+$any($event.target).value)">@for (student of students(); track student.studentId) { <option [value]="student.studentId">{{ student.fullName }}</option> }</select> } @else { <strong>{{ students()[0]!.fullName }}</strong> }</section>
+    <div class="tracking-grid">
+      <section class="trips-card"><header><div><p class="eyebrow">Próximos viajes</p><h2>Agenda de traslado</h2></div><span>{{ upcomingTrips().length }}</span></header>
+        @for (trip of upcomingTrips(); track trip.tripId) { <article><div class="date"><strong>{{ trip.scheduledStartAt | date:'dd' }}</strong><small>{{ trip.scheduledStartAt | date:'MMM' }}</small></div><div><span class="route-code">{{ trip.routeCode }}</span><h3>{{ trip.routeName }}</h3><p>{{ trip.routeOrigin }} → {{ trip.routeDestination }}</p><small><mat-icon>where_to_vote</mat-icon>{{ trip.stopName }} · {{ trip.scheduledStartAt | date:'medium' }}</small>@if (trip.resourcesReassigned || trip.studentRouteOrStopModified) { <em>{{ trip.modificationMessage || 'La asignación de este viaje fue actualizada.' }}</em> }</div></article> } @empty { <div class="empty-inline"><mat-icon>event_busy</mat-icon><p>Este estudiante no tiene próximos viajes programados.</p></div> }
+      </section>
+      @if (driver(); as credential) { <app-driver-credential [credential]="credential" /> }
+    </div>
+    <section class="preferences-card"><header><div><p class="eyebrow">Notificaciones</p><h2>Preferencias de alertas</h2><p>Elige qué eventos deseas recibir para este estudiante.</p></div></header><form [formGroup]="preferencesForm" (ngSubmit)="savePreferences()"><label><input type="checkbox" formControlName="notifyBoarding" /><span><strong>Abordaje</strong><small>Cuando se registre el abordaje.</small></span></label><label><input type="checkbox" formControlName="notifyArrival" /><span><strong>Llegada</strong><small>Cuando el viaje llegue a destino.</small></span></label><label><input type="checkbox" formControlName="notifyDelay" /><span><strong>Retrasos</strong><small>Cuando se comunique una demora.</small></span></label><label><input type="checkbox" formControlName="notifyVehicleChange" /><span><strong>Cambio de vehículo</strong><small>Cuando cambie la unidad asignada.</small></span></label><label><input type="checkbox" formControlName="notifyIncident" /><span><strong>Incidencias</strong><small>Cuando se registre una incidencia.</small></span></label><button type="submit" [disabled]="saving()">@if (saving()) { <mat-spinner diameter="18" /> } @else { <mat-icon>save</mat-icon> }Guardar preferencias</button></form></section>
+  }
+</div>

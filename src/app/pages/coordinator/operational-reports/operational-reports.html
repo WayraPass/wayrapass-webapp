@@ -1,0 +1,38 @@
+<header class="wp-page-header no-tabs">
+  <div class="wp-page-header__row"><div><h1>Reportes operativos</h1><p>Consulta y exporta los indicadores reales del servicio WayraPass.</p></div></div>
+</header>
+
+<div class="wp-page-body reports-page">
+  <section class="wp-card report-filters" aria-labelledby="report-filters-title">
+    <div class="section-heading"><div><span class="eyebrow">US23 · Consulta operativa</span><h2 id="report-filters-title">Configura el reporte</h2></div><p>Las fechas se interpretan en la zona horaria de Lima.</p></div>
+    <div class="filter-grid">
+      <label><span>Tipo de reporte</span><select [ngModel]="indicator()" (ngModelChange)="updateIndicator($event)">@for (option of indicators; track option.value) { <option [value]="option.value">{{ option.label }}</option> }</select></label>
+      <label><span>Desde</span><input type="date" [ngModel]="from()" (ngModelChange)="updateFrom($event)" /></label>
+      <label><span>Hasta</span><input type="date" [ngModel]="to()" (ngModelChange)="updateTo($event)" /></label>
+    </div>
+    <p class="selection-description">{{ indicatorDescription() }}</p>
+    @if (validationMessage()) { <div class="wp-alert wp-alert--error compact" role="alert"><mat-icon>warning</mat-icon><span>{{ validationMessage() }}</span></div> }
+    <div class="filter-actions"><button class="wp-btn wp-btn--subtle" type="button" (click)="clear()">Limpiar</button><button class="wp-btn wp-btn--primary" type="button" [disabled]="loading()" (click)="consult()">@if (loading()) { <mat-spinner diameter="18" /> } @else { <mat-icon>search</mat-icon> }Consultar</button></div>
+  </section>
+
+  @if (errorMessage()) { <div class="wp-alert wp-alert--error" role="alert"><mat-icon>error</mat-icon><span>{{ errorMessage() }}</span><button class="wp-btn wp-btn--secondary wp-btn--sm" type="button" (click)="consult()">Reintentar</button></div> }
+  @if (loading()) { <div class="wp-card wp-empty"><mat-spinner diameter="36" /><p>Consultando indicadores operativos…</p></div> }
+
+  @if (report(); as result) {
+    <section class="report-result" aria-live="polite">
+      <header class="result-heading"><div><span class="eyebrow">{{ indicatorLabel() }}</span><h2>Resultados del {{ result.period.from }} al {{ result.period.to }}</h2><p>Generado en {{ result.period.zoneId }}</p></div><div class="export-actions"><button class="wp-btn wp-btn--secondary" type="button" [disabled]="exporting() !== null" (click)="export('PDF')"><mat-icon>picture_as_pdf</mat-icon>{{ exporting() === 'PDF' ? 'Exportando…' : 'Exportar PDF' }}</button><button class="wp-btn wp-btn--secondary" type="button" [disabled]="exporting() !== null" (click)="export('XLSX')"><mat-icon>table_view</mat-icon>{{ exporting() === 'XLSX' ? 'Exportando…' : 'Exportar Excel' }}</button></div></header>
+      @if (exportErrorMessage()) { <div class="wp-alert wp-alert--error" role="alert"><mat-icon>error</mat-icon><span>{{ exportErrorMessage() }}</span></div> }
+      @if (!result.hasData) { <div class="wp-card wp-empty"><mat-icon>query_stats</mat-icon><strong>Sin datos para el periodo seleccionado</strong><p>{{ result.message }}</p></div> }
+
+      @if (result.hasData) {
+        <div class="metric-grid">
+          @if (result.punctuality; as punctuality) { <article class="wp-card metric-card"><div class="metric-title"><mat-icon>schedule</mat-icon><h3>Puntualidad</h3></div><strong class="primary-metric">{{ percent(punctuality.onTimePercentage) }}</strong><dl><div><dt>Viajes evaluados</dt><dd>{{ punctuality.evaluatedTrips }}</dd></div><div><dt>Puntuales</dt><dd>{{ punctuality.onTimeTrips }}</dd></div><div><dt>Con retraso</dt><dd>{{ punctuality.lateTrips }}</dd></div></dl></article> }
+          @if (result.occupancy; as occupancy) { <article class="wp-card metric-card"><div class="metric-title"><mat-icon>groups</mat-icon><h3>Ocupación</h3></div><strong class="primary-metric">{{ percent(occupancy.occupancyPercentage) }}</strong><dl><div><dt>Viajes evaluados</dt><dd>{{ occupancy.evaluatedTrips }}</dd></div><div><dt>Abordajes confirmados</dt><dd>{{ occupancy.confirmedBoardings }}</dd></div><div><dt>Capacidad ofrecida</dt><dd>{{ occupancy.offeredCapacity }}</dd></div></dl></article> }
+          @if (result.incidents; as incidents) { <article class="wp-card metric-card"><div class="metric-title"><mat-icon>report_problem</mat-icon><h3>Incidencias</h3></div><strong class="primary-metric">{{ incidents.totalIncidents }}</strong><p>Incidencias registradas en operaciones del periodo.</p></article> }
+        </div>
+
+        @if (result.stopDemand; as demand) { <section class="wp-card demand-card"><div class="metric-title"><mat-icon>pin_drop</mat-icon><h3>Demanda por paradero</h3></div>@if (demand.length === 0) { <p class="inline-empty">No hay abordajes confirmados por paradero en este periodo.</p> } @else { <div class="table-wrap"><table><thead><tr><th>Paradero</th><th>Abordajes confirmados</th></tr></thead><tbody>@for (stop of demand; track stop.stopId) { <tr><td><strong>{{ stop.stopName }}</strong><small>ID {{ stop.stopId }}</small></td><td>{{ stop.confirmedBoardings }}</td></tr> }</tbody></table></div> }</section> }
+      }
+    </section>
+  } @else if (!loading() && !errorMessage()) { <div class="wp-card wp-empty initial-state"><mat-icon>analytics</mat-icon><strong>Elige un periodo para comenzar</strong><p>WayraPass mostrará únicamente los indicadores calculados por el backend.</p></div> }
+</div>

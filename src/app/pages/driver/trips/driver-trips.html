@@ -1,0 +1,39 @@
+<div class="trips-page">
+  <header class="page-heading"><p class="eyebrow">Tu jornada</p><h1>Mis viajes</h1><p>Revisa los recorridos, vehículos y paraderos asignados a tu cuenta.</p></header>
+
+  <form class="filter-card" [formGroup]="filters" (ngSubmit)="applyFilters()">
+    <label><span>Desde</span><input type="date" formControlName="from" /></label><label><span>Hasta</span><input type="date" formControlName="to" /></label>
+    <div class="filter-actions"><button type="button" class="secondary" (click)="clearFilters()" [disabled]="loading()"><mat-icon>filter_alt_off</mat-icon>Limpiar</button><button type="button" class="secondary" (click)="listAll()" [disabled]="loading()"><mat-icon>list</mat-icon>Listar todos</button><button type="submit" class="primary" [disabled]="loading()"><mat-icon>search</mat-icon>Consultar</button></div>
+  </form>
+  @if (filterMessage()) { <div class="alert" role="alert"><mat-icon>event_busy</mat-icon>{{ filterMessage() }}</div> }
+
+  @if (loading()) {
+    <section class="state-card" aria-live="polite"><mat-spinner diameter="42" /><h2>Cargando viajes asignados…</h2></section>
+  } @else if (errorMessage()) {
+    <section class="state-card error" role="alert"><span><mat-icon>cloud_off</mat-icon></span><h2>No pudimos cargar tus viajes</h2><p>{{ errorMessage() }}</p><button type="button" (click)="retry()"><mat-icon>refresh</mat-icon>Reintentar</button></section>
+  } @else if (!hasSearched()) {
+    <section class="state-card"><span><mat-icon>travel_explore</mat-icon></span><h2>Consulta tus viajes</h2><p>Selecciona un período o lista todos tus viajes asignados.</p></section>
+  } @else if (!trips().length) {
+    <section class="state-card empty"><span><mat-icon>event_available</mat-icon></span><h2>{{ listingAll() ? 'No tienes viajes asignados' : 'No tienes viajes asignados para este período' }}</h2><p>{{ listingAll() ? 'Vuelve a consultar más adelante.' : 'Prueba otro rango de fechas o vuelve a consultar más adelante.' }}</p></section>
+  } @else {
+    <section class="trip-list" aria-label="Viajes asignados">
+      @for (trip of pagedTrips(); track trip.tripId) {
+        <article class="trip-card">
+          <header><div><span class="route-code">{{ trip.routeCode }}</span><h2>{{ trip.routeName }}</h2></div><span class="status" [class]="'status ' + statusClass(trip.status)">{{ statusLabel(trip.status) }}</span></header>
+          <p class="route-path">{{ trip.origin }} <mat-icon>arrow_forward</mat-icon> {{ trip.destination }}</p>
+          <div class="summary-grid">
+            <div><mat-icon>calendar_month</mat-icon><span><small>Fecha</small><strong>{{ dateLabel(trip.scheduledStartAt) }}</strong></span></div>
+            <div><mat-icon>schedule</mat-icon><span><small>Horario programado</small><strong>{{ timeLabel(trip.scheduledStartAt) }} – {{ timeLabel(trip.scheduledEndAt) }}</strong></span></div>
+            <div><mat-icon>directions_bus</mat-icon><span><small>Vehículo</small>@if (trip.vehicle; as vehicle) { <strong>{{ vehicle.plate }}</strong><em>{{ vehicle.brand || 'Marca no registrada' }} {{ vehicle.model || '' }} · {{ vehicle.capacity }} pasajeros</em> } @else { <strong>Por asignar</strong> }</span></div>
+            @if (trip.actualStartAt || trip.actualEndAt) { <div><mat-icon>timer</mat-icon><span><small>Operación real</small><strong>@if (trip.actualStartAt) { Inicio {{ timeLabel(trip.actualStartAt) }} } @if (trip.actualEndAt) { · Fin {{ timeLabel(trip.actualEndAt) }} }</strong></span></div> }
+          </div>
+          @if (trip.assignmentChanged || trip.wasReassigned) { <div class="change-note"><mat-icon>published_with_changes</mat-icon><span>{{ trip.assignmentChangeMessage || 'La asignación de este recorrido fue actualizada.' }}</span></div> }
+          <section class="stops"><h3><mat-icon>signpost</mat-icon>Paraderos del recorrido</h3>@if (trip.stops.length) { <ol>@for (stop of orderedStops(trip); track stop.stopId) { <li [class.inactive]="!stop.active"><span class="order">{{ stop.stopOrder }}</span><div><strong>{{ stop.name }}</strong><small>{{ stop.address || 'Dirección no registrada' }}@if (stop.district) { · {{ stop.district }} } · {{ stop.estimatedMinutesFromStart }} min desde la salida</small>@if (!stop.active) { <em>Paradero no disponible</em> }</div></li> }</ol> } @else { <p>Aún no hay paraderos disponibles para esta ruta.</p> }</section>
+        </article>
+      }
+    </section>
+    @if (totalPages() > 1) {
+      <nav class="filter-card" aria-label="Paginación de viajes"><span>Mostrando {{ firstVisibleResult() }}–{{ lastVisibleResult() }} de {{ trips().length }} viajes</span><span>Página {{ currentPage() }} de {{ totalPages() }}</span><div class="filter-actions"><button type="button" class="secondary" (click)="previousPage()" [disabled]="currentPage() === 1"><mat-icon>chevron_left</mat-icon>Anterior</button><button type="button" class="secondary" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Siguiente<mat-icon>chevron_right</mat-icon></button></div></nav>
+    }
+  }
+</div>

@@ -1,8 +1,7 @@
 <div class="auth-page compact-auth-page">
   <aside class="auth-brand-panel">
     <a class="brand" routerLink="/login" aria-label="WayraPass, volver al inicio">
-      <span class="brand-mark" aria-hidden="true">W</span>
-      <span class="brand-word">WAYRA<span>PASS</span></span>
+      <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
     </a>
     <div class="brand-copy">
       <h1>Crea tu cuenta</h1>
@@ -18,10 +17,9 @@
   <main class="auth-form-panel">
     <section class="auth-card register-card" aria-labelledby="register-title">
       <div class="brand mobile-wordmark">
-        <span class="brand-mark" aria-hidden="true">W</span>
-        <span class="brand-word">WAYRA<span>PASS</span></span>
+        <img class="brand-logo" src="/assets/branding/logo.png" alt="WayraPass" />
       </div>
-      <header class="form-heading"><h2 id="register-title">Crear cuenta</h2><p>Completa tus datos para usar la simulación de WayraPass.</p></header>
+      <header class="form-heading"><h2 id="register-title">Crear cuenta</h2><p>Completa tus datos para acceder a WayraPass.</p></header>
 
       <fieldset class="role-selector public-role-selector">
         <legend>Tipo de cuenta</legend>
@@ -46,10 +44,25 @@
         @if (form.controls.email.hasError('required') && form.controls.email.touched) { <p class="field-error">El correo es obligatorio.</p> }
         @else if (form.controls.email.hasError('email') && form.controls.email.touched) { <p class="field-error">Ingresa un correo válido.</p> }
 
+        <label class="field-label" for="register-phone">Teléfono (opcional)</label>
+        <div class="input-shell" [class.invalid]="form.controls.phone.invalid && form.controls.phone.touched"><input id="register-phone" type="tel" formControlName="phone" autocomplete="tel" placeholder="+51 999 999 999" /></div>
+        @if (form.controls.phone.invalid && form.controls.phone.touched) { <p class="field-error">Ingresa un teléfono válido de 7 a 30 caracteres.</p> }
+
+        @if (selectedRole() === 'STUDENT') {
+          <div class="field-grid">
+            <div><label class="field-label" for="institution-id">Institución / campus</label><div class="input-shell select-shell" [class.invalid]="form.controls.institutionId.invalid && form.controls.institutionId.touched"><select id="institution-id" formControlName="institutionId" [disabled]="institutionsLoading()"><option [ngValue]="0">Selecciona una institución</option>@for (institution of institutions(); track institution.id) { <option [ngValue]="institution.id">{{ institution.displayName }}</option> }</select></div>
+              @if (institutionsLoading()) { <p class="field-help">Cargando instituciones y campus…</p> }
+              @else if (institutionsError()) { <p class="field-error">{{ institutionsError() }} <button type="button" class="inline-retry" (click)="loadInstitutions()">Reintentar</button></p> }
+              @else if (!institutions().length) { <p class="field-error">No hay instituciones disponibles actualmente.</p> }
+              @else if (form.controls.institutionId.invalid && form.controls.institutionId.touched) { <p class="field-error">Selecciona tu institución y campus.</p> }</div>
+            <div><label class="field-label" for="student-code">Código estudiantil (opcional)</label><div class="input-shell"><input id="student-code" formControlName="studentCode" maxlength="40" /></div></div>
+          </div>
+        }
+
         <label class="field-label" for="register-password">Contraseña</label>
         <div class="input-shell password-shell"><input id="register-password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="new-password" /><button type="button" (click)="showPassword.set(!showPassword())">{{ showPassword() ? 'Ocultar' : 'Mostrar' }}</button></div>
         @if (form.controls.password.hasError('required') && form.controls.password.touched) { <p class="field-error">La contraseña es obligatoria.</p> }
-        @else if (form.controls.password.hasError('minlength') && form.controls.password.touched) { <p class="field-error">Debe tener al menos 8 caracteres.</p> }
+        @else if (form.controls.password.hasError('minlength') && form.controls.password.touched) { <p class="field-error">Debe tener al menos 12 caracteres.</p> }
 
         <label class="field-label" for="confirm-password">Confirmar contraseña</label>
         <div class="input-shell password-shell"><input id="confirm-password" [type]="showConfirmPassword() ? 'text' : 'password'" formControlName="confirmPassword" autocomplete="new-password" /><button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())">{{ showConfirmPassword() ? 'Ocultar' : 'Mostrar' }}</button></div>
@@ -57,7 +70,7 @@
         @else if (form.hasError('passwordMismatch') && form.controls.confirmPassword.touched) { <p class="field-error">Las contraseñas no coinciden.</p> }
 
         <p class="role-notice registration-notice"><strong>Sin registro público:</strong> las cuentas de chofer y coordinador deben ser habilitadas por administración.</p>
-        <button mat-flat-button class="primary-button" type="submit" [disabled]="loading()">@if (loading()) { <mat-spinner diameter="20" /> } @else { Crear cuenta de {{ selectedRole() === 'STUDENT' ? 'Estudiante' : 'Familiar' }} }</button>
+        <button mat-flat-button class="primary-button" type="submit" [disabled]="loading() || (selectedRole() === 'STUDENT' && institutionsLoading())">@if (loading()) { <mat-spinner diameter="20" /> } @else { Crear cuenta de {{ selectedRole() === 'STUDENT' ? 'Estudiante' : 'Familiar' }} }</button>
       </form>
       <p class="auth-switch">¿Ya tienes una cuenta? <a routerLink="/login">Iniciar sesión</a></p>
     </section>
