@@ -31,7 +31,7 @@ describe('Wayria', () => {
       '¿Qué horarios tiene UPC-MON-SMI-01?',
       '¿Qué paraderos tiene UPC-MON-SMI-01?',
     ];
-    expect(fixture.componentInstance.suggestions).toEqual(expected);
+    expect(fixture.componentInstance.suggestions()).toEqual(expected);
     fixture.componentInstance.useSuggestion(expected[1]);
     expect(service.requests).toEqual([expected[1]]);
   });
@@ -42,12 +42,12 @@ describe('Wayria', () => {
     expect(fixture.nativeElement.textContent).toContain('Respuesta real');
   });
 
-  it('shows loading while waiting and renders structured routes', () => {
+  it('shows loading and keeps structured route data out of the chat UI', () => {
     const pending = new Subject<WayriaChatResponse>(); service.response = pending;
     fixture.componentInstance.message.set('Ruta UPC'); fixture.componentInstance.send(); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Consultando información real');
     pending.next({ message: 'Encontré una ruta.', routes: [{ code: 'UPC-MON-SMI-01', name: 'San Miguel', origin: 'San Miguel', destination: 'UPC', institution: 'UPC', campus: 'Monterrico' }], serviceStatus: null }); pending.complete(); fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('UPC-MON-SMI-01');
+    expect(fixture.nativeElement.textContent).not.toContain('UPC-MON-SMI-01');
   });
 
   it('shows a friendly error when the service fails', () => {

@@ -24,8 +24,16 @@ export interface WayriaServiceStatus {
   message: string;
 }
 
+export interface WayriaDelayedRoute { routeId: number; routeCode: string; routeName: string; evaluatedTrips: number; lateTrips: number; latePercentage: number; averageDelayMinutes: number; }
+export interface WayriaAffectedSchedule { routeCode: string; dayOfWeek: string; departureTime: string; lateTrips: number; }
+export interface WayriaPunctualitySummary {
+  from: string; to: string; evaluatedTrips: number; onTimeTrips: number; lateTrips: number; onTimePercentage: number;
+  mostDelayedRoutes: WayriaDelayedRoute[]; affectedSchedules: WayriaAffectedSchedule[];
+}
+
 export interface WayriaChatResponse {
   message: string;
   routes: WayriaRouteSummary[] | null;
   serviceStatus: WayriaServiceStatus | null;
+  punctualitySummary?: WayriaPunctualitySummary | null;
 }

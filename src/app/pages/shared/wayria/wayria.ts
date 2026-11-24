@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -12,15 +13,21 @@ interface ChatMessage { sender: 'user' | 'assistant'; text: string; response?: W
 @Component({ selector: 'app-wayria', standalone: true, imports: [FormsModule, MatIconModule, MatProgressSpinnerModule, DatePipe], templateUrl: './wayria.html', styleUrl: './wayria.css' })
 export class Wayria {
   private readonly wayria = inject(WayriaService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
   readonly messages = signal<ChatMessage[]>([]);
   readonly message = signal('');
   readonly loading = signal(false);
   readonly errorMessage = signal('');
-  readonly suggestions = [
+  readonly isCoordinator = computed(() => this.route?.snapshot.parent?.routeConfig?.path === 'coordinator');
+  readonly suggestions = computed(() => this.isCoordinator() ? [
+    'Resume la puntualidad de las rutas de esta semana',
+    '¿Qué rutas tuvieron más retrasos esta semana?',
+    'Muéstrame más detalles de UPC-MON-SMI-01',
+  ] : [
     '¿Cuáles son mis rutas disponibles?',
     '¿Qué horarios tiene UPC-MON-SMI-01?',
     '¿Qué paraderos tiene UPC-MON-SMI-01?',
-  ];
+  ]);
 
   send(): void {
     const text = this.message().trim();

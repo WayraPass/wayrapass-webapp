@@ -66,6 +66,7 @@ export const routes: Routes = [
       { path: 'assignments', loadComponent: () => import('./pages/coordinator/resource-assignment/resource-assignment').then((m) => m.ResourceAssignment), title: 'Asignación de recursos · WayraPass' },
       { path: 'calendar', loadComponent: () => import('./pages/coordinator/operations-calendar/operations-calendar').then((m) => m.OperationsCalendar), title: 'Calendario de operaciones · WayraPass' },
       { path: 'reports', loadComponent: () => import('./pages/coordinator/operational-reports/operational-reports').then((m) => m.OperationalReports), title: 'Reportes operativos · WayraPass' },
+      { path: 'wayria', loadComponent: () => import('./pages/shared/wayria/wayria').then((m) => m.Wayria), title: 'WayrIA · WayraPass' },
     ],
   },
   { path: '**', redirectTo: 'login' },

@@ -50,6 +50,7 @@ export class CoordinatorLayout {
     { label: 'Asignaciones', icon: 'assignment_ind', link: '/coordinator/assignments', sections: ['/coordinator/assignments'] },
     { label: 'Calendario', icon: 'calendar_month', link: '/coordinator/calendar', sections: ['/coordinator/calendar'] },
     { label: 'Reportes', icon: 'analytics', link: '/coordinator/reports', sections: ['/coordinator/reports'] },
+    { label: 'WayrIA', icon: 'smart_toy', link: '/coordinator/wayria', sections: ['/coordinator/wayria'] },
   ];
 
   isActive(item: NavItem): boolean {
