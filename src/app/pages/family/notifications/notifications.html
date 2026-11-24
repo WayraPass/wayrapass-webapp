@@ -1,0 +1,15 @@
+<div class="notifications-page">
+  <header class="page-heading"><div><p class="eyebrow">Avisos de tu familia</p><h1>Notificaciones</h1><p>Revisa los eventos recientes de los estudiantes vinculados a tu cuenta.</p></div><button type="button" class="refresh-button" (click)="refresh()" [disabled]="loading()"><mat-icon>refresh</mat-icon>Actualizar</button></header>
+  @if (errorMessage()) { <div class="alert error" role="alert"><mat-icon>error</mat-icon><span>{{ errorMessage() }}</span><button type="button" (click)="refresh()">Reintentar</button></div> }
+  @if (loading() && !notifications().length) {
+    <section class="state-card"><mat-spinner diameter="42" /><h2>Cargando notificaciones…</h2></section>
+  } @else if (!notifications().length && !errorMessage()) {
+    <section class="state-card empty"><span class="state-icon"><mat-icon>notifications_none</mat-icon></span><h2>No tienes notificaciones recientes.</h2><p>Los avisos sobre tus estudiantes vinculados aparecerán aquí.</p></section>
+  } @else if (notifications().length) {
+    <section class="notifications-list" aria-label="Notificaciones recientes">
+      @for (notification of notifications(); track notification.id) {
+        <article class="notification-item"><span [class]="iconClass(notification)"><mat-icon>{{ iconFor(notification.type) }}</mat-icon></span><div class="notification-content"><div class="notification-heading"><span>{{ typeLabel(notification.type) }}</span><time [attr.datetime]="notification.createdAt">{{ dateTime(notification.createdAt) }}</time></div><h2>{{ notification.title }}</h2><p>{{ notification.message }}</p>@if (notification.readAt) { <small>Leída según el registro del servicio.</small> }</div></article>
+      }
+    </section>
+  }
+</div>

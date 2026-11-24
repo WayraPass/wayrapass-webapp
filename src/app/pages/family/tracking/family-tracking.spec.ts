@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 import { FamilyDriverCredential, FamilyUpcomingTrip, LinkedStudent, NotificationPreferences } from '../../../core/models/family.models';
 import { FamilyService } from '../../../core/services/family.service';
 import { FamilyTracking } from './family-tracking';
@@ -15,10 +15,13 @@ class FamilyServiceStub {
   driver: Observable<FamilyDriverCredential> = of(driver);
   preferences: Observable<NotificationPreferences> = of(preferences);
   saved = false;
+  tripCalls: number[] = [];
+  driverCalls: number[] = [];
+  preferenceCalls: number[] = [];
   getLinkedStudents() { return this.students; }
-  getUpcomingTrips() { return this.trips; }
-  getCurrentDriverCredential() { return this.driver; }
-  getNotificationPreferences() { return this.preferences; }
+  getUpcomingTrips(studentId: number) { this.tripCalls.push(studentId); return this.trips; }
+  getCurrentDriverCredential(studentId: number) { this.driverCalls.push(studentId); return this.driver; }
+  getNotificationPreferences(studentId: number) { this.preferenceCalls.push(studentId); return this.preferences; }
   updateNotificationPreferences() { this.saved = true; return this.preferences; }
 }
 
@@ -63,5 +66,67 @@ describe('FamilyTracking US06', () => {
     service.students = throwError(() => new HttpErrorResponse({ status: 403 }));
     fixture = TestBed.createComponent(FamilyTracking); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No tienes autorización');
+  });
+
+  it('keeps the selected student rendered while loading only that student data', () => {
+    const rafaelTrips = new Subject<FamilyUpcomingTrip[]>();
+    const rafaelDriver = new Subject<FamilyDriverCredential>();
+    const rafaelPreferences = new Subject<NotificationPreferences>();
+    service.students = of([
+      { studentId: 2, fullName: 'Gustavo Oliver Junior', email: 'gustavo@edu.pe', institutionName: 'UPC', campusName: 'Monterrico', relationship: 'Familiar' },
+      { studentId: 8, fullName: 'Rafael Francisco Obregon Roca', email: 'rafael@edu.pe', institutionName: 'UPC', campusName: 'Monterrico', relationship: 'Familiar' },
+    ]);
+    const defaultTrips = service.trips;
+    const defaultDriver = service.driver;
+    const defaultPreferences = service.preferences;
+    service.getUpcomingTrips = (studentId: number) => { service.tripCalls.push(studentId); return studentId === 8 ? rafaelTrips : defaultTrips; };
+    service.getCurrentDriverCredential = (studentId: number) => { service.driverCalls.push(studentId); return studentId === 8 ? rafaelDriver : defaultDriver; };
+    service.getNotificationPreferences = (studentId: number) => { service.preferenceCalls.push(studentId); return studentId === 8 ? rafaelPreferences : defaultPreferences; };
+    fixture = TestBed.createComponent(FamilyTracking); fixture.detectChanges();
+
+    fixture.componentInstance.selectStudent(8); fixture.detectChanges();
+    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
+    expect(fixture.componentInstance.selectedStudentId()).toBe(8);
+    expect(select).toBeTruthy(); expect(select.value).toBe('8');
+    expect(fixture.nativeElement.textContent).not.toContain('UPC-SMI-01');
+    expect(service.tripCalls.at(-1)).toBe(8); expect(service.driverCalls.at(-1)).toBe(8); expect(service.preferenceCalls.at(-1)).toBe(8);
+
+    rafaelTrips.next([]); rafaelTrips.complete();
+    rafaelDriver.next(driver); rafaelDriver.complete();
+    rafaelPreferences.next({ ...preferences, studentId: 8, notifyBoarding: false, notifyArrival: false }); rafaelPreferences.complete();
+    fixture.detectChanges();
+    expect((fixture.nativeElement.querySelector('select') as HTMLSelectElement).value).toBe('8');
+    expect(fixture.nativeElement.textContent).toContain('no tiene próximos viajes');
+    expect(fixture.componentInstance.preferencesForm.controls.notifyBoarding.value).toBe(false);
+  });
+
+  it('keeps trips and preferences available when the selected student has no current driver', () => {
+    service.students = of([
+      { studentId: 2, fullName: 'Gustavo Oliver Junior', email: 'gustavo@edu.pe', institutionName: 'UPC', campusName: 'Monterrico', relationship: 'Familiar' },
+      { studentId: 8, fullName: 'Rafael Francisco Obregon Roca', email: 'rafael@edu.pe', institutionName: 'UPC', campusName: 'Monterrico', relationship: 'Familiar' },
+    ]);
+    service.trips = of([]);
+    service.driver = throwError(() => new HttpErrorResponse({ status: 404 }));
+    service.preferences = of({ ...preferences, studentId: 8, notifyArrival: false });
+    fixture = TestBed.createComponent(FamilyTracking); fixture.detectChanges();
+    fixture.componentInstance.selectStudent(8); fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
+    expect(select.value).toBe('8');
+    expect(fixture.nativeElement.textContent).toContain('Conductor no disponible');
+    expect(fixture.nativeElement.textContent).toContain('no tiene próximos viajes');
+    expect(fixture.componentInstance.preferencesForm.controls.notifyArrival.value).toBe(false);
+  });
+
+  it('supports repeated student changes without restoring the first student', () => {
+    service.students = of([
+      { studentId: 2, fullName: 'Gustavo Oliver Junior', email: 'gustavo@edu.pe', institutionName: 'UPC', campusName: 'Monterrico', relationship: 'Familiar' },
+      { studentId: 8, fullName: 'Rafael Francisco Obregon Roca', email: 'rafael@edu.pe', institutionName: 'UPC', campusName: 'Monterrico', relationship: 'Familiar' },
+    ]);
+    fixture = TestBed.createComponent(FamilyTracking); fixture.detectChanges();
+    fixture.componentInstance.selectStudent(8); fixture.componentInstance.selectStudent(2); fixture.componentInstance.selectStudent(8); fixture.detectChanges();
+    expect(fixture.componentInstance.selectedStudentId()).toBe(8);
+    expect((fixture.nativeElement.querySelector('select') as HTMLSelectElement).value).toBe('8');
+    expect(service.tripCalls.slice(-3)).toEqual([8, 2, 8]);
   });
 });
