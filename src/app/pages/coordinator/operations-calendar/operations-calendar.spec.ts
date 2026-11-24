@@ -1,6 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Validators } from '@angular/forms';
 import { Observable, Subject, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 import { CoordinatorTrip, RouteAdmin, RouteScheduleAdmin, TripCreateRequest, WeeklyOperation } from '../../../core/models/coordinator.models';
 import { CoordinatorService } from '../../../core/services/coordinator.service';
 import { OperationsCalendar, tripCreationErrorMessage } from './operations-calendar';
@@ -22,6 +24,7 @@ class CalendarServiceStub {
     { id: 12, routeId: 4, dayOfWeek: 'MONDAY', departureTime: '08:00:00', estimatedArrivalTime: '09:00:00', active: true },
     { id: 13, routeId: 8, dayOfWeek: 'TUESDAY', departureTime: '10:00:00', estimatedArrivalTime: null, active: true },
     { id: 14, routeId: 4, dayOfWeek: 'WEDNESDAY', departureTime: '12:00:00', estimatedArrivalTime: null, active: false },
+    { id: 15, routeId: 4, dayOfWeek: 'FRIDAY', departureTime: '14:15:00', estimatedArrivalTime: '15:00:00', active: true },
   ]);
   createResult: Observable<CoordinatorTrip> = of({ id: 40, routeId: 4, driverId: null, vehicleId: null, scheduledStartAt: '2099-11-10T13:00:00Z', scheduledEndAt: '2099-11-10T14:00:00Z', estimatedArrivalAt: null, status: 'SCHEDULED', wasReassigned: false });
   calls: Array<{ from: string; to: string }> = [];
@@ -37,9 +40,11 @@ describe('OperationsCalendar D2 / US22', () => {
   let component: OperationsCalendar;
   let service: CalendarServiceStub;
   beforeEach(async () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-11-03T15:00:00Z'));
     await TestBed.configureTestingModule({ imports: [OperationsCalendar], providers: [{ provide: CoordinatorService, useClass: CalendarServiceStub }] }).compileComponents();
     service = TestBed.inject(CoordinatorService) as unknown as CalendarServiceStub;
   });
+  afterEach(() => { fixture?.destroy(); vi.useRealTimers(); });
   function create(): void { fixture = TestBed.createComponent(OperationsCalendar); component = fixture.componentInstance; fixture.detectChanges(); }
   it('requests the current week from Monday through Sunday', () => {
     create(); const call = service.calls[0]; expect(call.from).toBe('2026-11-02'); expect(call.to).toBe('2026-11-08');
@@ -68,27 +73,54 @@ describe('OperationsCalendar D2 / US22', () => {
   });
   it('loads active routes and filters active schedules by selected route', () => {
     create(); component.openCreate(); component.createForm.controls.routeId.setValue(4); fixture.detectChanges(); const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('UNI-EST-01 — Santa Anita a UNI Rímac'); expect(text).not.toContain('OFF —'); expect(text).toContain('Lunes · 08:00 a 09:00'); expect(text).not.toContain('Martes · 10:00'); expect(text).not.toContain('Miércoles · 12:00');
+    expect(text).toContain('UNI-EST-01 — Santa Anita a UNI Rímac'); expect(text).not.toContain('OFF —'); expect(text).toContain('Lunes · 08:00 a 09:00'); expect(text).toContain('Viernes · 14:15 a 15:00'); expect(text).not.toContain('Martes · 10:00'); expect(text).not.toContain('Miércoles · 12:00');
   });
   it('clears a schedule when the route changes', () => {
     create(); component.createForm.patchValue({ routeId: 4, routeScheduleId: 12 }); component.routeChanged(); expect(component.createForm.controls.routeScheduleId.value).toBeNull();
   });
   it('validates required dates, future start and end after start before submitting', () => {
-    create(); component.openCreate(); component.createForm.patchValue({ routeId: 4 }); component.createTrip(); expect(service.createCalls).toHaveLength(0); expect(component.createError()).toContain('Indica la fecha');
+    create(); component.openCreate(); component.scheduleModeChanged('CUSTOM'); component.createForm.patchValue({ routeId: 4 }); component.createTrip(); expect(service.createCalls).toHaveLength(0); expect(component.createError()).toContain('Indica la fecha');
     component.createForm.patchValue({ scheduledStartAt: '2020-01-01T08:00', scheduledEndAt: '2020-01-01T09:00' }); component.createTrip(); expect(component.createError()).toContain('actual o futuro');
     component.createForm.patchValue({ scheduledStartAt: '2099-11-10T09:00', scheduledEndAt: '2099-11-10T08:00' }); component.createTrip(); expect(component.createError()).toContain('posterior al inicio'); expect(service.createCalls).toHaveLength(0);
   });
-  it('submits the exact DTO with Lima instants and no resources', () => {
-    create(); component.openCreate(); component.createForm.patchValue({ routeId: 4, routeScheduleId: 12, scheduledStartAt: '2099-11-10T08:00', scheduledEndAt: '2099-11-10T09:00' }); component.createTrip();
-    expect(service.createCalls).toEqual([{ routeId: 4, routeScheduleId: 12, driverId: null, vehicleId: null, scheduledStartAt: '2099-11-10T13:00:00.000Z', scheduledEndAt: '2099-11-10T14:00:00.000Z' }]);
+  it('submits the exact custom DTO with Lima instants and no resources', () => {
+    create(); component.openCreate(); component.scheduleModeChanged('CUSTOM'); component.createForm.patchValue({ routeId: 4, scheduledStartAt: '2099-11-10T08:00', scheduledEndAt: '2099-11-10T09:00' }); component.createTrip();
+    expect(service.createCalls).toEqual([{ routeId: 4, routeScheduleId: null, driverId: null, vehicleId: null, scheduledStartAt: '2099-11-10T13:00:00.000Z', scheduledEndAt: '2099-11-10T14:00:00.000Z' }]);
   });
   it('prevents double submit while creation is pending', () => {
-    const pending = new Subject<CoordinatorTrip>(); service.createResult = pending; create(); component.openCreate(); component.createForm.patchValue({ routeId: 4, scheduledStartAt: '2099-11-10T08:00', scheduledEndAt: '2099-11-10T09:00' }); component.createTrip(); component.createTrip(); expect(service.createCalls).toHaveLength(1); expect(component.creating()).toBe(true);
+    const pending = new Subject<CoordinatorTrip>(); service.createResult = pending; create(); component.openCreate(); component.scheduleModeChanged('CUSTOM'); component.createForm.patchValue({ routeId: 4, scheduledStartAt: '2099-11-10T08:00', scheduledEndAt: '2099-11-10T09:00' }); component.createTrip(); component.createTrip(); expect(service.createCalls).toHaveLength(1); expect(component.creating()).toBe(true);
   });
   it('reloads the created week and renders the new scheduled trip without resources', () => {
     create(); service.result = of([{ ...operation, tripId: 40, operationDate: '2099-11-10', scheduledStartAt: '2099-11-10T13:00:00Z', scheduledEndAt: '2099-11-10T14:00:00Z', status: 'SCHEDULED', driver: null, vehicle: null, modified: false }]);
-    component.openCreate(); component.createForm.patchValue({ routeId: 4, scheduledStartAt: '2099-11-10T08:00', scheduledEndAt: '2099-11-10T09:00' }); component.createTrip(); fixture.detectChanges(); const text = fixture.nativeElement.textContent as string;
+    component.openCreate(); component.scheduleModeChanged('CUSTOM'); component.createForm.patchValue({ routeId: 4, scheduledStartAt: '2099-11-10T08:00', scheduledEndAt: '2099-11-10T09:00' }); component.createTrip(); fixture.detectChanges(); const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Viaje creado correctamente'); expect(text).toContain('Programado'); expect(text).toContain('Sin conductor asignado'); expect(text).toContain('Sin vehículo asignado'); expect(service.calls.at(-1)).toEqual({ from: '2099-11-09', to: '2099-11-15' });
+  });
+  it('creates a scheduled trip from the selected route schedule in the visible week', () => {
+    create(); component.openCreate(); component.weekStart.set(new Date(2026, 10, 16, 12));
+    component.createForm.patchValue({ routeId: 4, routeScheduleId: 15 }); component.createTrip();
+    expect(service.createCalls).toEqual([{ routeId: 4, routeScheduleId: 15, driverId: null, vehicleId: null, scheduledStartAt: '2026-11-20T19:15:00.000Z', scheduledEndAt: '2026-11-20T20:00:00.000Z' }]);
+  });
+  it('requires a valid route schedule in scheduled mode and does not require manual dates', () => {
+    create(); component.openCreate(); component.weekStart.set(new Date(2099, 10, 9, 12)); component.createForm.patchValue({ routeId: 4 }); component.createTrip();
+    expect(component.createError()).toContain('Selecciona un horario'); expect(service.createCalls).toHaveLength(0);
+    component.createForm.controls.routeScheduleId.setValue(12); component.createTrip(); expect(service.createCalls).toHaveLength(1);
+  });
+  it('switches between exclusive schedule and custom controls with matching validators', () => {
+    create(); component.openCreate(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('select[formControlName="routeScheduleId"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('input[formControlName="scheduledStartAt"]')).toBeNull();
+    component.createForm.patchValue({ routeScheduleId: 12, scheduleMode: 'CUSTOM' }); component.scheduleModeChanged('CUSTOM'); fixture.detectChanges();
+    expect(component.createForm.controls.routeScheduleId.value).toBeNull(); expect(component.createForm.controls.scheduledStartAt.hasValidator(Validators.required)).toBe(true);
+    expect(fixture.nativeElement.querySelector('select[formControlName="routeScheduleId"]')).toBeNull(); expect(fixture.nativeElement.querySelector('input[formControlName="scheduledStartAt"]')).toBeTruthy();
+    component.createForm.patchValue({ scheduledStartAt: '2099-11-10T08:00', scheduledEndAt: '2099-11-10T09:00', scheduleMode: 'ROUTE_SCHEDULE' }); component.scheduleModeChanged('ROUTE_SCHEDULE'); fixture.detectChanges();
+    expect(component.createForm.controls.scheduledStartAt.value).toBe(''); expect(component.createForm.controls.scheduledEndAt.value).toBe(''); expect(component.createForm.controls.scheduledStartAt.hasValidator(Validators.required)).toBe(false); expect(component.createForm.controls.routeScheduleId.hasValidator(Validators.required)).toBe(true);
+  });
+  it('creates a custom trip after Angular has already updated the selected radio value', () => {
+    create(); component.openCreate();
+    component.createForm.controls.scheduleMode.setValue('CUSTOM'); component.scheduleModeChanged('CUSTOM');
+    component.createForm.patchValue({ routeId: 4, scheduledStartAt: '2099-11-10T08:00', scheduledEndAt: '2099-11-10T09:00' }); component.createTrip();
+    expect(component.createError()).toBe('');
+    expect(service.createCalls).toEqual([{ routeId: 4, routeScheduleId: null, driverId: null, vehicleId: null, scheduledStartAt: '2099-11-10T13:00:00.000Z', scheduledEndAt: '2099-11-10T14:00:00.000Z' }]);
   });
   it.each([
     [400, 'regla real', 'regla real'], [401, '', 'sesión venció'], [403, '', 'no tiene permiso'], [404, '', 'ruta o el horario'], [409, '', 'conflicto'],

@@ -9,6 +9,7 @@ import { CoordinatorTripStatus, RouteAdmin, RouteScheduleAdmin, TripCreateReques
 import { CoordinatorService, coordinatorErrorMessage } from '../../../core/services/coordinator.service';
 
 interface CalendarDay { date: string; weekday: string; dayLabel: string; operations: WeeklyOperation[]; }
+type TripScheduleMode = 'ROUTE_SCHEDULE' | 'CUSTOM';
 
 @Component({
   selector: 'app-operations-calendar',
@@ -36,8 +37,9 @@ export class OperationsCalendar {
   readonly createForm = this.fb.group({
     routeId: this.fb.nonNullable.control(0, [Validators.required, Validators.min(1)]),
     routeScheduleId: this.fb.control<number | null>(null),
-    scheduledStartAt: this.fb.nonNullable.control('', Validators.required),
-    scheduledEndAt: this.fb.nonNullable.control('', Validators.required),
+    scheduledStartAt: this.fb.nonNullable.control(''),
+    scheduledEndAt: this.fb.nonNullable.control(''),
+    scheduleMode: this.fb.nonNullable.control<TripScheduleMode>('ROUTE_SCHEDULE'),
   });
   readonly fromDate = computed(() => dateValue(this.weekStart()));
   readonly toDate = computed(() => dateValue(addDays(this.weekStart(), 6)));
@@ -73,20 +75,45 @@ export class OperationsCalendar {
     });
   }
   openCreate(): void {
-    this.createError.set(''); this.notice.set(''); this.createForm.reset({ routeId: 0, routeScheduleId: null, scheduledStartAt: '', scheduledEndAt: '' }); this.createOpen.set(true);
+    this.createError.set(''); this.notice.set('');
+    this.createForm.reset({ routeId: 0, routeScheduleId: null, scheduledStartAt: '', scheduledEndAt: '', scheduleMode: 'ROUTE_SCHEDULE' });
+    this.updateModeValidators('ROUTE_SCHEDULE'); this.createOpen.set(true);
   }
   closeCreate(): void { if (!this.creating()) { this.createOpen.set(false); this.createError.set(''); } }
   routeChanged(): void { this.createForm.controls.routeScheduleId.setValue(null); }
+  scheduleModeChanged(mode: TripScheduleMode): void {
+    this.createForm.controls.scheduleMode.setValue(mode);
+    this.updateModeValidators(mode);
+    this.createError.set('');
+  }
   schedulesForSelectedRoute(): RouteScheduleAdmin[] {
     const routeId = this.createForm.controls.routeId.value;
     return this.schedules().filter((schedule) => schedule.active && schedule.routeId === routeId);
   }
   createTrip(): void {
     if (this.creating()) return;
-    const value = this.createForm.getRawValue(); const validation = this.validateTrip(value.scheduledStartAt, value.scheduledEndAt);
-    if (this.createForm.invalid || value.routeId < 1 || validation) { this.createForm.markAllAsTouched(); this.createError.set(validation || 'Completa los campos obligatorios.'); return; }
-    if (value.routeScheduleId !== null && !this.schedulesForSelectedRoute().some((schedule) => schedule.id === value.routeScheduleId)) { this.createError.set('El horario seleccionado no pertenece a la ruta o ya no está activo.'); return; }
-    const request: TripCreateRequest = { routeId: value.routeId, routeScheduleId: value.routeScheduleId, driverId: null, vehicleId: null, scheduledStartAt: limaInstant(value.scheduledStartAt), scheduledEndAt: limaInstant(value.scheduledEndAt) };
+    const value = this.createForm.getRawValue();
+    if (value.routeId < 1) { this.createForm.markAllAsTouched(); this.createError.set('Selecciona una ruta activa.'); return; }
+
+    let routeScheduleId: number | null = null;
+    let scheduledStartAt = value.scheduledStartAt;
+    let scheduledEndAt = value.scheduledEndAt;
+
+    if (value.scheduleMode === 'ROUTE_SCHEDULE') {
+      const schedule = this.schedulesForSelectedRoute().find((item) => item.id === value.routeScheduleId);
+      if (!schedule) { this.createForm.markAllAsTouched(); this.createError.set('Selecciona un horario de ruta activo.'); return; }
+      if (!schedule.estimatedArrivalTime) { this.createError.set('El horario seleccionado no tiene una hora estimada de llegada.'); return; }
+      ({ scheduledStartAt, scheduledEndAt } = this.dateTimesForSchedule(schedule));
+      routeScheduleId = schedule.id;
+    } else {
+      const validation = this.validateTrip(scheduledStartAt, scheduledEndAt);
+      if (this.createForm.invalid || validation) { this.createForm.markAllAsTouched(); this.createError.set(validation || 'Completa los campos obligatorios.'); return; }
+    }
+
+    const validation = this.validateTrip(scheduledStartAt, scheduledEndAt);
+    if (validation) { this.createError.set(validation); return; }
+
+    const request: TripCreateRequest = { routeId: value.routeId, routeScheduleId, driverId: null, vehicleId: null, scheduledStartAt: limaInstant(scheduledStartAt), scheduledEndAt: limaInstant(scheduledEndAt) };
     this.creating.set(true); this.createError.set('');
     this.service.createTrip(request).pipe(finalize(() => this.creating.set(false))).subscribe({
       next: (trip) => {
@@ -109,6 +136,29 @@ export class OperationsCalendar {
     if (startInstant.getTime() < Date.now()) return 'El inicio debe ser actual o futuro.';
     if (endInstant.getTime() <= startInstant.getTime()) return 'La fecha y hora de fin debe ser posterior al inicio.';
     return '';
+  }
+  private updateModeValidators(mode: TripScheduleMode): void {
+    const schedule = this.createForm.controls.routeScheduleId;
+    const start = this.createForm.controls.scheduledStartAt;
+    const end = this.createForm.controls.scheduledEndAt;
+    if (mode === 'ROUTE_SCHEDULE') {
+      schedule.setValidators(Validators.required);
+      start.clearValidators(); end.clearValidators();
+      start.setValue(''); end.setValue('');
+    } else {
+      schedule.clearValidators(); schedule.setValue(null);
+      start.setValidators(Validators.required); end.setValidators(Validators.required);
+    }
+    schedule.updateValueAndValidity(); start.updateValueAndValidity(); end.updateValueAndValidity();
+  }
+  private dateTimesForSchedule(schedule: RouteScheduleAdmin): { scheduledStartAt: string; scheduledEndAt: string } {
+    const dayOffset = ({ MONDAY: 0, TUESDAY: 1, WEDNESDAY: 2, THURSDAY: 3, FRIDAY: 4, SATURDAY: 5, SUNDAY: 6 } as const)[schedule.dayOfWeek];
+    const startDate = addDays(this.weekStart(), dayOffset);
+    const endDate = schedule.estimatedArrivalTime! <= schedule.departureTime ? addDays(startDate, 1) : startDate;
+    return {
+      scheduledStartAt: `${dateValue(startDate)}T${schedule.departureTime.slice(0, 5)}`,
+      scheduledEndAt: `${dateValue(endDate)}T${schedule.estimatedArrivalTime!.slice(0, 5)}`,
+    };
   }
 }
 
