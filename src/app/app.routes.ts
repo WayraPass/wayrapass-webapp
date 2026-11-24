@@ -23,6 +23,7 @@ export const routes: Routes = [
       { path: 'upcoming-trips', loadComponent: () => import('./pages/student/upcoming-trips/upcoming-trips').then((m) => m.UpcomingTrips), title: 'Próximos viajes · WayraPass' },
       { path: 'current-trip', loadComponent: () => import('./pages/student/current-trip/current-trip').then((m) => m.CurrentTrip), title: 'Mi viaje actual · WayraPass' },
       { path: 'history', loadComponent: () => import('./pages/trip-history/trip-history').then((m) => m.TripHistory), title: 'Mi historial · WayraPass' },
+      { path: 'wayria', loadComponent: () => import('./pages/shared/wayria/wayria').then((m) => m.Wayria), title: 'WayrIA · WayraPass' },
     ],
   },
   {
@@ -33,7 +34,9 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', loadComponent: () => import('./pages/family/dashboard/dashboard').then((m) => m.FamilyDashboard), title: 'Inicio familiar · WayraPass' },
       { path: 'tracking', loadComponent: () => import('./pages/family/tracking/family-tracking').then((m) => m.FamilyTracking), title: 'Seguimiento familiar · WayraPass' },
+      { path: 'notifications', loadComponent: () => import('./pages/family/notifications/notifications').then((m) => m.FamilyNotifications), title: 'Notificaciones · WayraPass' },
       { path: 'history', loadComponent: () => import('./pages/trip-history/trip-history').then((m) => m.TripHistory), data: { familyMode: true }, title: 'Historial familiar · WayraPass' },
+      { path: 'wayria', loadComponent: () => import('./pages/shared/wayria/wayria').then((m) => m.Wayria), title: 'WayrIA · WayraPass' },
     ],
   },
   {
