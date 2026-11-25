@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiErrorResponse } from '../models/auth.models';
-import { WayriaChatRequest, WayriaChatResponse } from '../models/wayria.models';
+import { WayriaChatRequest, WayriaChatResponse, WayriaProactiveMessage } from '../models/wayria.models';
 
 @Injectable({ providedIn: 'root' })
 export class WayriaService {
@@ -12,6 +12,10 @@ export class WayriaService {
   chat(message: string): Observable<WayriaChatResponse> {
     const body: WayriaChatRequest = { message };
     return this.http.post<WayriaChatResponse>(`${environment.apiUrl}/agent/chat`, body);
+  }
+
+  proactiveMessages(): Observable<WayriaProactiveMessage[]> {
+    return this.http.get<WayriaProactiveMessage[]>(`${environment.apiUrl}/agent/proactive-messages`);
   }
 }
 

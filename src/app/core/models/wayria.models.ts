@@ -2,6 +2,15 @@ export interface WayriaChatRequest {
   message: string;
 }
 
+export interface WayriaProactiveMessage {
+  id: number;
+  tripId: number;
+  incidentId: number | null;
+  type: string;
+  message: string;
+  createdAt: string;
+}
+
 export interface WayriaRouteSummary {
   code: string;
   name: string;

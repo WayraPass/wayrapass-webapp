@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +11,7 @@ import { WayriaService, wayriaErrorMessage } from '../../../core/services/wayria
 interface ChatMessage { sender: 'user' | 'assistant'; text: string; response?: WayriaChatResponse; }
 
 @Component({ selector: 'app-wayria', standalone: true, imports: [FormsModule, MatIconModule, MatProgressSpinnerModule, DatePipe], templateUrl: './wayria.html', styleUrl: './wayria.css' })
-export class Wayria {
+export class Wayria implements OnInit {
   private readonly wayria = inject(WayriaService);
   private readonly route = inject(ActivatedRoute, { optional: true });
   readonly messages = signal<ChatMessage[]>([]);
@@ -28,6 +28,14 @@ export class Wayria {
     '¿Qué horarios tiene UPC-MON-SMI-01?',
     '¿Qué paraderos tiene UPC-MON-SMI-01?',
   ]);
+
+  ngOnInit(): void {
+    if (this.isCoordinator()) return;
+    this.wayria.proactiveMessages().subscribe({
+      next: (items) => this.messages.set(items.map((item) => ({ sender: 'assistant' as const, text: item.message }))),
+      error: () => undefined,
+    });
+  }
 
   send(): void {
     const text = this.message().trim();
