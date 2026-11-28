@@ -1,13 +1,28 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
-import { WayriaChatResponse } from '../../../core/models/wayria.models';
+import { TranscriptionResponse, WayriaChatResponse } from '../../../core/models/wayria.models';
 import { WayriaService } from '../../../core/services/wayria.service';
 import { Wayria } from './wayria';
 
 class WayriaServiceStub {
   requests: string[] = [];
+  transcriptions: Blob[] = [];
   response = of<WayriaChatResponse>({ message: 'Respuesta real', routes: [], serviceStatus: null });
+  transcriptionResponse = of<TranscriptionResponse>({ transcript: 'Consulta transcrita' });
   chat(message: string) { this.requests.push(message); return this.response; }
+  transcribe(audio: Blob) { this.transcriptions.push(audio); return this.transcriptionResponse; }
+  proactiveMessages() { return of([]); }
+}
+
+class FakeMediaRecorder {
+  ondataavailable: ((event: BlobEvent) => void) | null = null;
+  onstop: (() => void) | null = null;
+  mimeType = 'audio/webm';
+  start(): void { }
+  stop(): void {
+    this.ondataavailable?.({ data: new Blob(['voice'], { type: this.mimeType }) } as BlobEvent);
+    this.onstop?.();
+  }
 }
 
 describe('Wayria', () => {
@@ -25,15 +40,11 @@ describe('Wayria', () => {
     expect((fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('renders the validated US10 suggestions and sends the selected text unchanged', () => {
-    const expected = [
-      '¿Cuáles son mis rutas disponibles?',
-      '¿Qué horarios tiene UPC-MON-SMI-01?',
-      '¿Qué paraderos tiene UPC-MON-SMI-01?',
-    ];
-    expect(fixture.componentInstance.suggestions()).toEqual(expected);
-    fixture.componentInstance.useSuggestion(expected[1]);
-    expect(service.requests).toEqual([expected[1]]);
+  it('renders only the welcome copy while the conversation is empty', () => {
+    expect(fixture.nativeElement.textContent).toContain('¿Qué necesitas consultar?');
+    expect(fixture.nativeElement.textContent).toContain('WayrIA consulta los datos registrados en WayraPass para responderte.');
+    expect(fixture.nativeElement.querySelectorAll('.suggestions').length).toBe(0);
+    expect(service.requests).toEqual([]);
   });
 
   it('sends a message and displays the assistant response', () => {
@@ -54,5 +65,38 @@ describe('Wayria', () => {
     service.response = throwError(() => new Error('offline'));
     fixture.componentInstance.message.set('Estado'); fixture.componentInstance.send(); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No pude consultar la información del servicio');
+  });
+
+  it('transcribes audio into the textarea without automatically sending chat', async () => {
+    let stoppedTracks = 0;
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => ({ getTracks: () => [{ stop: () => stoppedTracks++ }] }) } });
+    Object.defineProperty(globalThis, 'MediaRecorder', { configurable: true, value: FakeMediaRecorder });
+
+    await fixture.componentInstance.startRecording();
+    expect(fixture.componentInstance.recordingState()).toBe('RECORDING');
+    fixture.componentInstance.stopRecording();
+
+    expect(service.transcriptions.length).toBe(1);
+    expect(fixture.componentInstance.message()).toBe('Consulta transcrita');
+    expect(service.requests).toEqual([]);
+    expect(stoppedTracks).toBe(1);
+  });
+
+  it('keeps text chat available when microphone permission or transcription fails', async () => {
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { throw new Error('denied'); } } });
+    Object.defineProperty(globalThis, 'MediaRecorder', { configurable: true, value: FakeMediaRecorder });
+
+    await fixture.componentInstance.startRecording();
+    expect(fixture.componentInstance.voiceErrorMessage()).toContain('micrófono');
+    expect(fixture.componentInstance.recordingState()).toBe('IDLE');
+
+    let stoppedTracks = 0;
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => ({ getTracks: () => [{ stop: () => stoppedTracks++ }] }) } });
+    service.transcriptionResponse = throwError(() => new Error('offline'));
+    await fixture.componentInstance.startRecording();
+    fixture.componentInstance.stopRecording();
+    expect(fixture.componentInstance.voiceErrorMessage()).toContain('transcribir');
+    expect(service.requests).toEqual([]);
+    expect(stoppedTracks).toBe(1);
   });
 });

@@ -2,6 +2,10 @@ export interface WayriaChatRequest {
   message: string;
 }
 
+export interface TranscriptionResponse {
+  transcript: string;
+}
+
 export interface WayriaProactiveMessage {
   id: number;
   tripId: number;
